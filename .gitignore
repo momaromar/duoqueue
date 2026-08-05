@@ -1,4 +1,12 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# Agent Markdown Files
+PAGE_IMPLEMENTATION_ROADMAP.md
+PROJECT_OVERVIEW.md
+CHANGE_1.md
+CHANGE_2.md
+CHANGE_3.md
+CHANGE_4.md
+CHANGE_5.md
+CHANGE_6.md
 
 # dependencies
 node_modules/
