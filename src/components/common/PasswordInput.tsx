@@ -1,9 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { Pressable, StyleSheet, Text } from "react-native";
 
 import { AppInput, type AppInputProps } from "@/src/components/common/AppInput";
-import { colors, spacing } from "@/src/theme/tokens";
 
 type PasswordInputProps = Omit<AppInputProps, "rightAccessory" | "secureTextEntry">;
 
@@ -24,11 +22,7 @@ export function PasswordInput(props: PasswordInputProps) {
           onPress={() => setVisible((current) => !current)}
           style={styles.toggle}
         >
-          <Ionicons
-            name={visible ? "eye-off-outline" : "eye-outline"}
-            color={colors.textMuted}
-            size={22}
-          />
+          <Text>{visible ? "Hide" : "Show"}</Text>
         </Pressable>
       }
     />
@@ -37,10 +31,10 @@ export function PasswordInput(props: PasswordInputProps) {
 
 const styles = StyleSheet.create({
   toggle: {
-    minWidth: 48,
-    minHeight: 48,
+    minWidth: 44,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: spacing.xs,
+    paddingHorizontal: 8,
   },
 });

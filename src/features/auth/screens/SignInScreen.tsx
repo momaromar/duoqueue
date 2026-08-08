@@ -10,7 +10,6 @@ import { Screen } from "@/src/components/common/Screen";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { AuthScreenHeader } from "@/src/features/auth/screens/AuthScreenHeader";
 import { signInSchema, type SignInValues } from "@/src/schemas/auth";
-import { spacing } from "@/src/theme/tokens";
 
 export function SignInScreen() {
   const { signIn } = useAuth();
@@ -68,14 +67,11 @@ export function SignInScreen() {
         />
         <AppButton
           label="Forgot password?"
-          variant="text"
           onPress={() => router.push("/forgot-password")}
-          style={styles.forgotButton}
         />
         <AppButton label="Sign in" loading={isSubmitting} onPress={handleSubmit(signIn)} />
         <AppButton
           label="New here? Create an account"
-          variant="text"
           onPress={() => router.replace("/sign-up")}
         />
       </View>
@@ -84,7 +80,6 @@ export function SignInScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { gap: spacing.xl },
-  form: { gap: spacing.md },
-  forgotButton: { alignSelf: "flex-end", marginTop: -spacing.sm },
+  screen: { gap: 16 },
+  form: { gap: 12 },
 });

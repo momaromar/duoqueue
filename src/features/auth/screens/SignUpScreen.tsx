@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { Controller, useForm } from "react-hook-form";
@@ -12,7 +11,6 @@ import { Screen } from "@/src/components/common/Screen";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { AuthScreenHeader } from "@/src/features/auth/screens/AuthScreenHeader";
 import { signUpSchema, type SignUpValues } from "@/src/schemas/auth";
-import { colors, radii, spacing } from "@/src/theme/tokens";
 
 export function SignUpScreen() {
   const { signUp } = useAuth();
@@ -97,14 +95,16 @@ export function SignUpScreen() {
                 onPress={() => onChange(!value)}
                 style={styles.agreementRow}
               >
-                <View style={[styles.checkbox, value && styles.checkboxChecked]}>
-                  {value ? <Ionicons name="checkmark" size={18} color={colors.white} /> : null}
+                <View style={styles.checkbox}>
+                  <AppText>{value ? "✓" : ""}</AppText>
                 </View>
                 <AppText style={styles.agreementText}>
                   I agree to the Terms and Privacy Policy placeholders.
                 </AppText>
               </Pressable>
-              {error ? <AppText color="error" variant="caption">{error.message}</AppText> : null}
+              {error ? (
+                <AppText accessibilityLiveRegion="polite">{error.message}</AppText>
+              ) : null}
             </View>
           )}
         />
@@ -115,7 +115,6 @@ export function SignUpScreen() {
         />
         <AppButton
           label="Already have an account? Sign in"
-          variant="text"
           onPress={() => router.replace("/sign-in")}
         />
       </View>
@@ -124,19 +123,16 @@ export function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { gap: spacing.xl },
-  form: { gap: spacing.md },
-  agreementGroup: { gap: spacing.xs },
-  agreementRow: { flexDirection: "row", alignItems: "center", minHeight: 48, gap: spacing.sm },
+  screen: { gap: 16 },
+  form: { gap: 12 },
+  agreementGroup: { gap: 4 },
+  agreementRow: { flexDirection: "row", alignItems: "center", minHeight: 44, gap: 8 },
   checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: radii.sm,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+    width: 24,
+    height: 24,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
   agreementText: { flex: 1 },
 });

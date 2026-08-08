@@ -9,8 +9,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { colors, spacing } from "@/src/theme/tokens";
-
 type ScreenProps = {
   children: React.ReactNode;
   scroll?: boolean;
@@ -28,7 +26,6 @@ export function Screen({
     <ScrollView
       contentContainerStyle={[styles.content, contentContainerStyle]}
       keyboardShouldPersistTaps="handled"
-      showsVerticalScrollIndicator={false}
     >
       {children}
     </ScrollView>
@@ -53,11 +50,10 @@ export function Screen({
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.background },
+  safeArea: { flex: 1 },
   flex: { flex: 1 },
   content: {
     flexGrow: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    padding: 16,
   },
 });

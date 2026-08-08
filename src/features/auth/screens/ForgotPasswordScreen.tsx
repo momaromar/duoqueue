@@ -13,7 +13,6 @@ import {
   forgotPasswordSchema,
   type ForgotPasswordValues,
 } from "@/src/schemas/auth";
-import { colors, radii, spacing } from "@/src/theme/tokens";
 
 export function ForgotPasswordScreen() {
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
@@ -40,14 +39,13 @@ export function ForgotPasswordScreen() {
 
       {submittedEmail ? (
         <View style={styles.confirmation} accessibilityLiveRegion="polite">
-          <AppText variant="subtitle" color="success">Check your inbox</AppText>
-          <AppText color="textMuted">
+          <AppText accessibilityRole="header">Check your inbox</AppText>
+          <AppText>
             Mock reset instructions were sent to {submittedEmail}. No real email was sent.
           </AppText>
           <AppButton label="Back to sign in" onPress={() => router.replace("/sign-in")} />
           <AppButton
             label="Try another email"
-            variant="text"
             onPress={() => setSubmittedEmail(null)}
           />
         </View>
@@ -84,12 +82,7 @@ export function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { gap: spacing.xl },
-  form: { gap: spacing.md },
-  confirmation: {
-    gap: spacing.md,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radii.lg,
-  },
+  screen: { gap: 16 },
+  form: { gap: 12 },
+  confirmation: { gap: 12 },
 });
