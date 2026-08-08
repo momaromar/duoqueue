@@ -6,5 +6,14 @@ module.exports = defineConfig([
   expoConfig,
   {
     ignores: ['dist/*'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ConditionalExpression',
+          message: 'Ternary operators are not allowed.',
+        },
+      ],
+    },
   },
 ]);

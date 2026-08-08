@@ -30,6 +30,51 @@ export function ForgotPasswordScreen() {
     setSubmittedEmail(email);
   };
 
+  let content: React.ReactNode = (
+    <View style={styles.form}>
+      <Controller
+        control={control}
+        name="email"
+        render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
+          <AppInput
+            label="Email"
+            placeholder="you@example.com"
+            autoCapitalize="none"
+            autoComplete="email"
+            keyboardType="email-address"
+            returnKeyType="send"
+            value={value}
+            onBlur={onBlur}
+            onChangeText={onChange}
+            error={error?.message}
+            onSubmitEditing={handleSubmit(submit)}
+          />
+        )}
+      />
+      <AppButton
+        label="Send reset instructions"
+        loading={isSubmitting}
+        onPress={handleSubmit(submit)}
+      />
+    </View>
+  );
+
+  if (submittedEmail) {
+    content = (
+      <View style={styles.confirmation} accessibilityLiveRegion="polite">
+        <AppText accessibilityRole="header">Check your inbox</AppText>
+        <AppText>
+          Mock reset instructions were sent to {submittedEmail}. No real email was sent.
+        </AppText>
+        <AppButton label="Back to sign in" onPress={() => router.replace("/sign-in")} />
+        <AppButton
+          label="Try another email"
+          onPress={() => setSubmittedEmail(null)}
+        />
+      </View>
+    );
+  }
+
   return (
     <Screen scroll keyboardAware contentContainerStyle={styles.screen}>
       <AuthScreenHeader
@@ -37,46 +82,7 @@ export function ForgotPasswordScreen() {
         description="Enter your email and we’ll simulate sending reset instructions."
       />
 
-      {submittedEmail ? (
-        <View style={styles.confirmation} accessibilityLiveRegion="polite">
-          <AppText accessibilityRole="header">Check your inbox</AppText>
-          <AppText>
-            Mock reset instructions were sent to {submittedEmail}. No real email was sent.
-          </AppText>
-          <AppButton label="Back to sign in" onPress={() => router.replace("/sign-in")} />
-          <AppButton
-            label="Try another email"
-            onPress={() => setSubmittedEmail(null)}
-          />
-        </View>
-      ) : (
-        <View style={styles.form}>
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-              <AppInput
-                label="Email"
-                placeholder="you@example.com"
-                autoCapitalize="none"
-                autoComplete="email"
-                keyboardType="email-address"
-                returnKeyType="send"
-                value={value}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                error={error?.message}
-                onSubmitEditing={handleSubmit(submit)}
-              />
-            )}
-          />
-          <AppButton
-            label="Send reset instructions"
-            loading={isSubmitting}
-            onPress={handleSubmit(submit)}
-          />
-        </View>
-      )}
+      {content}
     </Screen>
   );
 }

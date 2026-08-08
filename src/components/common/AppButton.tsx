@@ -23,6 +23,11 @@ export function AppButton({
   ...props
 }: AppButtonProps) {
   const unavailable = disabled || loading;
+  let content = <AppText>{label}</AppText>;
+
+  if (loading) {
+    content = <ActivityIndicator />;
+  }
 
   return (
     <Pressable
@@ -38,7 +43,7 @@ export function AppButton({
         style,
       ]}
     >
-      {loading ? <ActivityIndicator /> : <AppText>{label}</AppText>}
+      {content}
     </Pressable>
   );
 }

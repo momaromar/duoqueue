@@ -20,6 +20,14 @@ export function AppInput({
   style,
   ...props
 }: AppInputProps) {
+  let errorMessage: React.ReactNode;
+
+  if (error) {
+    errorMessage = (
+      <AppText accessibilityLiveRegion="polite">{error}</AppText>
+    );
+  }
+
   return (
     <View style={styles.group}>
       <AppText>{label}</AppText>
@@ -31,9 +39,7 @@ export function AppInput({
         />
         {rightAccessory}
       </View>
-      {error ? (
-        <AppText accessibilityLiveRegion="polite">{error}</AppText>
-      ) : null}
+      {errorMessage}
     </View>
   );
 }

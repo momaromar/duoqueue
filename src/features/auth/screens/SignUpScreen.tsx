@@ -86,27 +86,40 @@ export function SignUpScreen() {
         <Controller
           control={control}
           name="agreedToTerms"
-          render={({ field: { onChange, value }, fieldState: { error } }) => (
-            <View style={styles.agreementGroup}>
-              <Pressable
-                accessibilityRole="checkbox"
-                accessibilityLabel="Agree to the Terms and Privacy Policy placeholders"
-                accessibilityState={{ checked: value }}
-                onPress={() => onChange(!value)}
-                style={styles.agreementRow}
-              >
-                <View style={styles.checkbox}>
-                  <AppText>{value ? "✓" : ""}</AppText>
-                </View>
-                <AppText style={styles.agreementText}>
-                  I agree to the Terms and Privacy Policy placeholders.
-                </AppText>
-              </Pressable>
-              {error ? (
+          render={({ field: { onChange, value }, fieldState: { error } }) => {
+            let checkmark = "";
+            let errorMessage: React.ReactNode;
+
+            if (value) {
+              checkmark = "✓";
+            }
+
+            if (error) {
+              errorMessage = (
                 <AppText accessibilityLiveRegion="polite">{error.message}</AppText>
-              ) : null}
-            </View>
-          )}
+              );
+            }
+
+            return (
+              <View style={styles.agreementGroup}>
+                <Pressable
+                  accessibilityRole="checkbox"
+                  accessibilityLabel="Agree to the Terms and Privacy Policy placeholders"
+                  accessibilityState={{ checked: value }}
+                  onPress={() => onChange(!value)}
+                  style={styles.agreementRow}
+                >
+                  <View style={styles.checkbox}>
+                    <AppText>{checkmark}</AppText>
+                  </View>
+                  <AppText style={styles.agreementText}>
+                    I agree to the Terms and Privacy Policy placeholders.
+                  </AppText>
+                </Pressable>
+                {errorMessage}
+              </View>
+            );
+          }}
         />
         <AppButton
           label="Create account"

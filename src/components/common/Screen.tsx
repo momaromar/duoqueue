@@ -22,29 +22,40 @@ export function Screen({
   keyboardAware = false,
   contentContainerStyle,
 }: ScreenProps) {
-  const content = scroll ? (
-    <ScrollView
-      contentContainerStyle={[styles.content, contentContainerStyle]}
-      keyboardShouldPersistTaps="handled"
-    >
-      {children}
-    </ScrollView>
-  ) : (
+  let content: React.ReactNode = (
     <View style={[styles.content, contentContainerStyle]}>{children}</View>
   );
 
+  if (scroll) {
+    content = (
+      <ScrollView
+        contentContainerStyle={[styles.content, contentContainerStyle]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {children}
+      </ScrollView>
+    );
+  }
+
+  let screenContent = content;
+
+  if (keyboardAware) {
+    let keyboardBehavior: "padding" | undefined;
+
+    if (Platform.OS === "ios") {
+      keyboardBehavior = "padding";
+    }
+
+    screenContent = (
+      <KeyboardAvoidingView behavior={keyboardBehavior} style={styles.flex}>
+        {content}
+      </KeyboardAvoidingView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      {keyboardAware ? (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={styles.flex}
-        >
-          {content}
-        </KeyboardAvoidingView>
-      ) : (
-        content
-      )}
+      {screenContent}
     </SafeAreaView>
   );
 }

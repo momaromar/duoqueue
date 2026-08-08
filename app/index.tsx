@@ -4,6 +4,11 @@ import { useAuth } from "@/src/features/auth/AuthContext";
 
 export default function Index() {
   const { isAuthenticated } = useAuth();
+  let destination: "/(app)" | "/welcome" = "/welcome";
 
-  return <Redirect href={isAuthenticated ? "/(app)" : "/welcome"} />;
+  if (isAuthenticated) {
+    destination = "/(app)";
+  }
+
+  return <Redirect href={destination} />;
 }

@@ -7,6 +7,13 @@ type PasswordInputProps = Omit<AppInputProps, "rightAccessory" | "secureTextEntr
 
 export function PasswordInput(props: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
+  let accessibilityLabel = "Show password";
+  let toggleLabel = "Show";
+
+  if (visible) {
+    accessibilityLabel = "Hide password";
+    toggleLabel = "Hide";
+  }
 
   return (
     <AppInput
@@ -17,12 +24,12 @@ export function PasswordInput(props: PasswordInputProps) {
       rightAccessory={
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={visible ? "Hide password" : "Show password"}
+          accessibilityLabel={accessibilityLabel}
           hitSlop={8}
           onPress={() => setVisible((current) => !current)}
           style={styles.toggle}
         >
-          <Text>{visible ? "Hide" : "Show"}</Text>
+          <Text>{toggleLabel}</Text>
         </Pressable>
       }
     />
