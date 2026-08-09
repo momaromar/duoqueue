@@ -8,14 +8,15 @@ import { AppButton } from "@/src/components/common/AppButton";
 import { AppInput } from "@/src/components/common/AppInput";
 import { AppText } from "@/src/components/common/AppText";
 import { Screen } from "@/src/components/common/Screen";
+import { useAuth } from "@/src/features/auth/AuthContext";
 import { AuthScreenHeader } from "@/src/features/auth/screens/AuthScreenHeader";
-import {
-  forgotPasswordSchema,
-  type ForgotPasswordValues,
-} from "@/src/schemas/auth";
+import { forgotPasswordSchema, type ForgotPasswordValues } from "@/src/schemas/auth";
+import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
 export function ForgotPasswordScreen() {
+  const { requestPasswordReset } = useAuth();
   const [submittedEmail, setSubmittedEmail] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -26,11 +27,16 @@ export function ForgotPasswordScreen() {
   });
 
   const submit = async ({ email }: ForgotPasswordValues) => {
-    await new Promise<void>((resolve) => setTimeout(resolve, 500));
-    setSubmittedEmail(email);
+    setSubmitError(null);
+    try {
+      await requestPasswordReset(email);
+      setSubmittedEmail(email);
+    } catch (error) {
+      setSubmitError(getErrorMessage(error));
+    }
   };
 
-  let content: React.ReactNode = (
+  const form = (
     <View style={styles.form}>
       <Controller
         control={control}
@@ -51,6 +57,7 @@ export function ForgotPasswordScreen() {
           />
         )}
       />
+      {submitError && <AppText accessibilityLiveRegion="polite">{submitError}</AppText>}
       <AppButton
         label="Send reset instructions"
         loading={isSubmitting}
@@ -59,18 +66,14 @@ export function ForgotPasswordScreen() {
     </View>
   );
 
+  let content = form;
   if (submittedEmail) {
     content = (
       <View style={styles.confirmation} accessibilityLiveRegion="polite">
         <AppText accessibilityRole="header">Check your inbox</AppText>
-        <AppText>
-          Mock reset instructions were sent to {submittedEmail}. No real email was sent.
-        </AppText>
+        <AppText>Password reset instructions were sent to {submittedEmail}.</AppText>
         <AppButton label="Back to sign in" onPress={() => router.replace("/sign-in")} />
-        <AppButton
-          label="Try another email"
-          onPress={() => setSubmittedEmail(null)}
-        />
+        <AppButton label="Try another email" onPress={() => setSubmittedEmail(null)} />
       </View>
     );
   }
@@ -79,9 +82,8 @@ export function ForgotPasswordScreen() {
     <Screen scroll keyboardAware contentContainerStyle={styles.screen}>
       <AuthScreenHeader
         title="Reset your password"
-        description="Enter your email and we’ll simulate sending reset instructions."
+        description="Enter your email and we’ll send password reset instructions."
       />
-
       {content}
     </Screen>
   );

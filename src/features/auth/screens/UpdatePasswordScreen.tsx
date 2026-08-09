@@ -1,58 +1,77 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { StyleSheet, View } from "react-native";
 
 import { AppButton } from "@/src/components/common/AppButton";
-import { AppInput } from "@/src/components/common/AppInput";
 import { AppText } from "@/src/components/common/AppText";
+import { LoadingView } from "@/src/components/common/LoadingView";
 import { PasswordInput } from "@/src/components/common/PasswordInput";
 import { Screen } from "@/src/components/common/Screen";
 import { useAuth } from "@/src/features/auth/AuthContext";
-import { AuthScreenHeader } from "@/src/features/auth/screens/AuthScreenHeader";
-import { signInSchema, type SignInValues } from "@/src/schemas/auth";
+import { ConfigurationRequiredScreen } from "@/src/features/auth/screens/ConfigurationRequiredScreen";
+import { updatePasswordSchema, type UpdatePasswordValues } from "@/src/schemas/auth";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
-export function SignInScreen() {
-  const { signIn } = useAuth();
+export function UpdatePasswordScreen() {
+  const {
+    configurationError,
+    isAuthenticated,
+    isInitializing,
+    isPasswordRecovery,
+    updatePassword,
+  } = useAuth();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
     formState: { isSubmitting },
-  } = useForm<SignInValues>({
-    resolver: zodResolver(signInSchema),
-    defaultValues: { email: "", password: "" },
+  } = useForm<UpdatePasswordValues>({
+    resolver: zodResolver(updatePasswordSchema),
+    defaultValues: { password: "", confirmPassword: "" },
   });
 
-  const submit = async (values: SignInValues) => {
+  useEffect(() => {
+    if (isInitializing || isPasswordRecovery) return;
+    if (isAuthenticated) {
+      router.replace("/(app)");
+    } else {
+      router.replace("/sign-in");
+    }
+  }, [isAuthenticated, isInitializing, isPasswordRecovery]);
+
+  const submit = async ({ password }: UpdatePasswordValues) => {
     setSubmitError(null);
     try {
-      await signIn(values);
+      await updatePassword(password);
+      router.replace("/(app)");
     } catch (error) {
       setSubmitError(getErrorMessage(error));
     }
   };
 
+  if (isInitializing) {
+    return <LoadingView label="Loading recovery session…" />;
+  }
+
+  if (configurationError) {
+    return <ConfigurationRequiredScreen />;
+  }
+
   return (
     <Screen scroll keyboardAware contentContainerStyle={styles.screen}>
-      <AuthScreenHeader
-        title="Welcome back"
-        description="Sign in to keep building your circle."
-      />
+      <AppText accessibilityRole="header">Choose a new password</AppText>
+      <AppText>Enter and confirm the password you want to use.</AppText>
       <View style={styles.form}>
         <Controller
           control={control}
-          name="email"
+          name="password"
           render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
-            <AppInput
-              label="Email"
-              placeholder="you@example.com"
-              autoCapitalize="none"
-              autoComplete="email"
-              keyboardType="email-address"
-              returnKeyType="next"
+            <PasswordInput
+              label="New password"
+              placeholder="At least 8 characters"
+              autoComplete="new-password"
               value={value}
               onBlur={onBlur}
               onChangeText={onChange}
@@ -62,12 +81,12 @@ export function SignInScreen() {
         />
         <Controller
           control={control}
-          name="password"
+          name="confirmPassword"
           render={({ field: { onBlur, onChange, value }, fieldState: { error } }) => (
             <PasswordInput
-              label="Password"
-              placeholder="At least 8 characters"
-              autoComplete="current-password"
+              label="Confirm new password"
+              placeholder="Enter it again"
+              autoComplete="new-password"
               returnKeyType="done"
               value={value}
               onBlur={onBlur}
@@ -77,12 +96,12 @@ export function SignInScreen() {
             />
           )}
         />
-        <AppButton label="Forgot password?" onPress={() => router.push("/forgot-password")} />
         {submitError && <AppText accessibilityLiveRegion="polite">{submitError}</AppText>}
-        <AppButton label="Sign in" loading={isSubmitting} onPress={handleSubmit(submit)} />
         <AppButton
-          label="New here? Create an account"
-          onPress={() => router.replace("/sign-up")}
+          label="Update password"
+          loading={isSubmitting}
+          disabled={!isPasswordRecovery}
+          onPress={handleSubmit(submit)}
         />
       </View>
     </Screen>

@@ -1,5 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -11,9 +12,11 @@ import { Screen } from "@/src/components/common/Screen";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { AuthScreenHeader } from "@/src/features/auth/screens/AuthScreenHeader";
 import { signUpSchema, type SignUpValues } from "@/src/schemas/auth";
+import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
 export function SignUpScreen() {
   const { signUp } = useAuth();
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     control,
     handleSubmit,
@@ -28,13 +31,24 @@ export function SignUpScreen() {
     },
   });
 
+  const submit = async ({ email, password }: SignUpValues) => {
+    setSubmitError(null);
+    try {
+      const result = await signUp({ email, password });
+      if (result.requiresEmailVerification) {
+        router.replace({ pathname: "/verify-email", params: { email } });
+      }
+    } catch (error) {
+      setSubmitError(getErrorMessage(error));
+    }
+  };
+
   return (
     <Screen scroll keyboardAware contentContainerStyle={styles.screen}>
       <AuthScreenHeader
         title="Create your account"
         description="Start with your account. You’ll connect with your friend in a later milestone."
       />
-
       <View style={styles.form}>
         <Controller
           control={control}
@@ -86,45 +100,31 @@ export function SignUpScreen() {
         <Controller
           control={control}
           name="agreedToTerms"
-          render={({ field: { onChange, value }, fieldState: { error } }) => {
-            let checkmark = "";
-            let errorMessage: React.ReactNode;
-
-            if (value) {
-              checkmark = "✓";
-            }
-
-            if (error) {
-              errorMessage = (
-                <AppText accessibilityLiveRegion="polite">{error.message}</AppText>
-              );
-            }
-
-            return (
-              <View style={styles.agreementGroup}>
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityLabel="Agree to the Terms and Privacy Policy placeholders"
-                  accessibilityState={{ checked: value }}
-                  onPress={() => onChange(!value)}
-                  style={styles.agreementRow}
-                >
-                  <View style={styles.checkbox}>
-                    <AppText>{checkmark}</AppText>
-                  </View>
-                  <AppText style={styles.agreementText}>
-                    I agree to the Terms and Privacy Policy placeholders.
-                  </AppText>
-                </Pressable>
-                {errorMessage}
-              </View>
-            );
-          }}
+          render={({ field: { onChange, value }, fieldState: { error } }) => (
+            <View style={styles.agreementGroup}>
+              <Pressable
+                accessibilityRole="checkbox"
+                accessibilityLabel="Agree to the Terms and Privacy Policy placeholders"
+                accessibilityState={{ checked: value }}
+                onPress={() => onChange(!value)}
+                style={styles.agreementRow}
+              >
+                <View style={styles.checkbox}>
+                  <AppText>{value && "✓"}</AppText>
+                </View>
+                <AppText style={styles.agreementText}>
+                  I agree to the Terms and Privacy Policy placeholders.
+                </AppText>
+              </Pressable>
+              {error && <AppText accessibilityLiveRegion="polite">{error.message}</AppText>}
+            </View>
+          )}
         />
+        {submitError && <AppText accessibilityLiveRegion="polite">{submitError}</AppText>}
         <AppButton
           label="Create account"
           loading={isSubmitting}
-          onPress={handleSubmit(signUp)}
+          onPress={handleSubmit(submit)}
         />
         <AppButton
           label="Already have an account? Sign in"
