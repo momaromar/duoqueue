@@ -4,7 +4,7 @@ import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { ConfigurationRequiredScreen } from "@/src/features/auth/screens/ConfigurationRequiredScreen";
 
-export default function AuthLayout() {
+export default function OnboardingLayout() {
   const { configurationError, isAuthenticated, isInitializing, isPasswordRecovery } =
     useAuth();
 
@@ -20,8 +20,8 @@ export default function AuthLayout() {
     return <Redirect href="/update-password" />;
   }
 
-  if (isAuthenticated) {
-    return <Redirect href="/duo-choice" />;
+  if (!isAuthenticated) {
+    return <Redirect href="/welcome" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

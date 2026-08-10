@@ -1,4 +1,4 @@
-import { Redirect, Stack } from "expo-router";
+import { Redirect } from "expo-router";
 
 import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
@@ -24,5 +24,5 @@ export default function AppLayout() {
     return <Redirect href="/welcome" />;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return <Redirect href="/duo-choice" />;
 }

@@ -7,7 +7,7 @@ import { ConfigurationRequiredScreen } from "@/src/features/auth/screens/Configu
 export default function Index() {
   const { configurationError, isAuthenticated, isInitializing, isPasswordRecovery } =
     useAuth();
-  let destination: "/(app)" | "/update-password" | "/welcome" = "/welcome";
+  let destination: "/duo-choice" | "/update-password" | "/welcome" = "/welcome";
 
   if (configurationError) {
     return <ConfigurationRequiredScreen />;
@@ -20,7 +20,7 @@ export default function Index() {
   if (isPasswordRecovery) {
     destination = "/update-password";
   } else if (isAuthenticated) {
-    destination = "/(app)";
+    destination = "/duo-choice";
   }
 
   return <Redirect href={destination} />;
