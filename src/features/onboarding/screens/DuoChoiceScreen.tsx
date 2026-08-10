@@ -1,15 +1,19 @@
+import { Redirect, router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet } from "react-native";
 
 import { AppButton } from "@/src/components/common/AppButton";
 import { AppText } from "@/src/components/common/AppText";
+import { LoadingView } from "@/src/components/common/LoadingView";
 import { Screen } from "@/src/components/common/Screen";
 import { useAuth } from "@/src/features/auth/AuthContext";
+import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
+import { useCurrentDuoState } from "@/src/features/duos/useCurrentDuoState";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
 export function DuoChoiceScreen() {
-  const { signOut } = useAuth();
-  const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const { signOut, user } = useAuth();
+  const duoQuery = useCurrentDuoState(user?.id);
   const [signOutError, setSignOutError] = useState<string | null>(null);
 
   const submitSignOut = async () => {
@@ -22,6 +26,12 @@ export function DuoChoiceScreen() {
     }
   };
 
+  if (duoQuery.isPending) return <LoadingView label="Loading duo setup…" />;
+  if (duoQuery.error) {
+    return <DuoStateErrorScreen error={duoQuery.error} onRetry={duoQuery.refetch} />;
+  }
+  if (duoQuery.data.duo) return <Redirect href="/waiting-for-friend" />;
+
   return (
     <Screen contentContainerStyle={styles.screen}>
       <AppText accessibilityRole="header">Set up your duo</AppText>
@@ -30,21 +40,8 @@ export function DuoChoiceScreen() {
         friend will share one Duo Profile instead of creating public individual profiles.
       </AppText>
       <AppText>Choose how you plan to form your duo.</AppText>
-      <AppButton
-        label="Create a duo"
-        onPress={() =>
-          setActionMessage("Creating a duo will be available in the next phase.")
-        }
-      />
-      <AppButton
-        label="Join with invitation"
-        onPress={() =>
-          setActionMessage("Joining with an invitation will be available in the next phase.")
-        }
-      />
-      {actionMessage && (
-        <AppText accessibilityLiveRegion="polite">{actionMessage}</AppText>
-      )}
+      <AppButton label="Create a duo" onPress={() => router.push("/create-duo")} />
+      <AppButton label="Join with invitation" onPress={() => router.push("/join-duo")} />
       {signOutError && (
         <AppText accessibilityLiveRegion="polite">{signOutError}</AppText>
       )}

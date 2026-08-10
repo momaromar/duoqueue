@@ -26,7 +26,7 @@ export function AuthCallbackScreen() {
     if (isPasswordRecovery) {
       router.replace("/update-password");
     } else if (isAuthenticated) {
-      router.replace("/duo-choice");
+      router.replace("/");
     }
   }, [
     authLinkError,

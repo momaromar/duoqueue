@@ -24,5 +24,5 @@ export default function AppLayout() {
     return <Redirect href="/welcome" />;
   }
 
-  return <Redirect href="/duo-choice" />;
+  return <Redirect href="/" />;
 }

@@ -35,7 +35,7 @@ export function UpdatePasswordScreen() {
   useEffect(() => {
     if (isInitializing || isPasswordRecovery) return;
     if (isAuthenticated) {
-      router.replace("/duo-choice");
+      router.replace("/");
     } else {
       router.replace("/sign-in");
     }
@@ -45,7 +45,7 @@ export function UpdatePasswordScreen() {
     setSubmitError(null);
     try {
       await updatePassword(password);
-      router.replace("/duo-choice");
+      router.replace("/");
     } catch (error) {
       setSubmitError(getErrorMessage(error));
     }
