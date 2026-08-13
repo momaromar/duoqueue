@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { Redirect, router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { LoadingView } from "@/src/components/common/LoadingView";
@@ -13,6 +13,11 @@ import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
+import {
+  statusForDuo,
+  useMockMatchmakingStore,
+} from "@/src/features/matchmaking/mockMatchmakingStore";
+import type { MockMatchmakingStatus } from "@/src/features/matchmaking/types";
 
 function memberAccent(colorKey: MemberColorKey) {
   if (colorKey === "member_a") return lobbyColors.memberA;
@@ -25,13 +30,26 @@ function initialFor(displayName: string) {
   return "?";
 }
 
+function queueLabel(status: MockMatchmakingStatus) {
+  if (status === "waiting") return "RESUME";
+  if (status === "matched") return "MATCH FOUND";
+  return "QUEUE";
+}
+
+function queueDetail(status: MockMatchmakingStatus) {
+  if (status === "waiting") return "RETURN TO SEARCH";
+  if (status === "matched") return "VIEW YOUR MATCH";
+  return "FIND ANOTHER DUO";
+}
+
 export function MainMenuScreen() {
   const { user } = useAuth();
   const duoQuery = useCurrentDuoState(user?.id);
   const profileQuery = useDuoProfileState(user?.id);
   const refetchDuo = duoQuery.refetch;
   const refetchProfile = profileQuery.refetch;
-  const [queueMessage, setQueueMessage] = useState<string | null>(null);
+  const profileDuoId = profileQuery.data?.duo.id;
+  const mockStatus = useMockMatchmakingStore((state) => statusForDuo(state, profileDuoId));
 
   useFocusEffect(useCallback(() => {
     if (user?.id) {
@@ -59,11 +77,19 @@ export function MainMenuScreen() {
     && duo.profileComplete;
   let readinessLabel = "CHECK REQUIRED";
   if (isReady) readinessLabel = "READY TO QUEUE";
+  if (mockStatus === "waiting") readinessLabel = "SEARCH IN PROGRESS";
+  if (mockStatus === "matched") readinessLabel = "MATCH FOUND";
 
-  const showQueueNotice = () => {
-    setQueueMessage(
-      "Matchmaking arrives in Phase 7. Your duo has not entered a queue and no ticket was created.",
-    );
+  const openQueue = () => {
+    if (mockStatus === "waiting") {
+      router.push("/matchmaking/waiting");
+      return;
+    }
+    if (mockStatus === "matched") {
+      router.push("/matchmaking/matched");
+      return;
+    }
+    router.push("/matchmaking/queue");
   };
 
   return (
@@ -113,14 +139,11 @@ export function MainMenuScreen() {
       <View style={styles.queueArea}>
         <LobbyButton
           variant="queue"
-          label="QUEUE"
-          detail="FIND ANOTHER DUO"
-          accessibilityHint="Explains when matchmaking becomes available"
-          onPress={showQueueNotice}
+          label={queueLabel(mockStatus)}
+          detail={queueDetail(mockStatus)}
+          accessibilityHint="Opens the local mock matchmaking flow"
+          onPress={openQueue}
         />
-        {queueMessage && (
-          <Text accessibilityLiveRegion="polite" style={styles.queueMessage}>{queueMessage}</Text>
-        )}
       </View>
 
       <View style={styles.menu} accessibilityLabel="Lobby menu">
@@ -185,16 +208,5 @@ const styles = StyleSheet.create({
   readinessTitle: { color: lobbyColors.green, fontWeight: "900", letterSpacing: 1.8 },
   readinessDetail: { color: lobbyColors.muted, fontSize: 12, letterSpacing: 0.8 },
   queueArea: { alignItems: "center", gap: 12, paddingVertical: 4 },
-  queueMessage: {
-    maxWidth: 440,
-    color: lobbyColors.text,
-    textAlign: "center",
-    lineHeight: 20,
-    borderWidth: 1,
-    borderColor: lobbyColors.cyan,
-    borderRadius: 8,
-    backgroundColor: lobbyColors.surface,
-    padding: 10,
-  },
   menu: { flexDirection: "row", gap: 10 },
 });
