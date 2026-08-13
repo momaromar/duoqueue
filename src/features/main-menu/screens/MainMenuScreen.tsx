@@ -13,11 +13,11 @@ import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
+import type { MatchmakingPresentationStatus } from "@/src/features/matchmaking/schemas";
 import {
-  statusForDuo,
-  useMockMatchmakingStore,
-} from "@/src/features/matchmaking/mockMatchmakingStore";
-import type { MockMatchmakingStatus } from "@/src/features/matchmaking/types";
+  useMatchmakingRealtime,
+  useMatchmakingState,
+} from "@/src/features/matchmaking/useMatchmakingState";
 
 function memberAccent(colorKey: MemberColorKey) {
   if (colorKey === "member_a") return lobbyColors.memberA;
@@ -30,14 +30,14 @@ function initialFor(displayName: string) {
   return "?";
 }
 
-function queueLabel(status: MockMatchmakingStatus) {
-  if (status === "waiting") return "RESUME";
+function queueLabel(status: MatchmakingPresentationStatus) {
+  if (status === "waiting" || status === "eligible" || status === "matching") return "RESUME";
   if (status === "matched") return "MATCH FOUND";
   return "QUEUE";
 }
 
-function queueDetail(status: MockMatchmakingStatus) {
-  if (status === "waiting") return "RETURN TO SEARCH";
+function queueDetail(status: MatchmakingPresentationStatus) {
+  if (status === "waiting" || status === "eligible" || status === "matching") return "RETURN TO SEARCH";
   if (status === "matched") return "VIEW YOUR MATCH";
   return "FIND ANOTHER DUO";
 }
@@ -46,19 +46,22 @@ export function MainMenuScreen() {
   const { user } = useAuth();
   const duoQuery = useCurrentDuoState(user?.id);
   const profileQuery = useDuoProfileState(user?.id);
+  const matchmakingQuery = useMatchmakingState(user?.id);
   const refetchDuo = duoQuery.refetch;
   const refetchProfile = profileQuery.refetch;
-  const profileDuoId = profileQuery.data?.duo.id;
-  const mockStatus = useMockMatchmakingStore((state) => statusForDuo(state, profileDuoId));
+  const refetchMatchmaking = matchmakingQuery.refetch;
+  const matchmakingDuoId = matchmakingQuery.data?.duo?.id;
+  useMatchmakingRealtime(matchmakingDuoId, user?.id);
 
   useFocusEffect(useCallback(() => {
     if (user?.id) {
       void refetchDuo();
       void refetchProfile();
+      void refetchMatchmaking();
     }
-  }, [refetchDuo, refetchProfile, user?.id]));
+  }, [refetchDuo, refetchMatchmaking, refetchProfile, user?.id]));
 
-  if (duoQuery.isPending || profileQuery.isPending) {
+  if (duoQuery.isPending || profileQuery.isPending || matchmakingQuery.isPending) {
     return <LoadingView label="Entering lobby…" />;
   }
   if (duoQuery.error) {
@@ -67,9 +70,13 @@ export function MainMenuScreen() {
   if (profileQuery.error) {
     return <DuoStateErrorScreen error={profileQuery.error} onRetry={profileQuery.refetch} />;
   }
+  if (matchmakingQuery.error) {
+    return <DuoStateErrorScreen error={matchmakingQuery.error} onRetry={matchmakingQuery.refetch} />;
+  }
 
   const duo = duoQuery.data.duo;
   const profile = profileQuery.data;
+  const matchmaking = matchmakingQuery.data;
   if (!duo?.profileComplete || !profile.duo.profileComplete) return <Redirect href="/" />;
 
   const isReady = duo.status === "active"
@@ -77,15 +84,17 @@ export function MainMenuScreen() {
     && duo.profileComplete;
   let readinessLabel = "CHECK REQUIRED";
   if (isReady) readinessLabel = "READY TO QUEUE";
-  if (mockStatus === "waiting") readinessLabel = "SEARCH IN PROGRESS";
-  if (mockStatus === "matched") readinessLabel = "MATCH FOUND";
+  if (matchmaking.status === "waiting" || matchmaking.status === "eligible" || matchmaking.status === "matching") {
+    readinessLabel = "SEARCH IN PROGRESS";
+  }
+  if (matchmaking.status === "matched") readinessLabel = "MATCH FOUND";
 
   const openQueue = () => {
-    if (mockStatus === "waiting") {
+    if (matchmaking.status === "waiting" || matchmaking.status === "eligible" || matchmaking.status === "matching") {
       router.push("/matchmaking/waiting");
       return;
     }
-    if (mockStatus === "matched") {
+    if (matchmaking.status === "matched") {
       router.push("/matchmaking/matched");
       return;
     }
@@ -139,9 +148,9 @@ export function MainMenuScreen() {
       <View style={styles.queueArea}>
         <LobbyButton
           variant="queue"
-          label={queueLabel(mockStatus)}
-          detail={queueDetail(mockStatus)}
-          accessibilityHint="Opens the local mock matchmaking flow"
+          label={queueLabel(matchmaking.status)}
+          detail={queueDetail(matchmaking.status)}
+          accessibilityHint="Opens the shared Supabase matchmaking flow"
           onPress={openQueue}
         />
       </View>

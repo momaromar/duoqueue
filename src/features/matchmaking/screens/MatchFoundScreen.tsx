@@ -1,48 +1,49 @@
 import { Redirect, router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
-import type { DuoProfileStateWithImages } from "@/src/features/duo-profile/schemas";
 import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
-import { FixtureDuoSummary } from "@/src/features/matchmaking/components/FixtureDuoSummary";
-import { MatchmakingDuoGate } from "@/src/features/matchmaking/components/MatchmakingDuoGate";
-import { MatchmakingSummary } from "@/src/features/matchmaking/components/MatchmakingSummary";
 import {
-  statusForDuo,
-  useMockMatchmakingStore,
-} from "@/src/features/matchmaking/mockMatchmakingStore";
+  MatchmakingDuoGate,
+  type MatchmakingGateData,
+} from "@/src/features/matchmaking/components/MatchmakingDuoGate";
+import { MatchmakingSummary } from "@/src/features/matchmaking/components/MatchmakingSummary";
+import { OpponentDuoSummary } from "@/src/features/matchmaking/components/OpponentDuoSummary";
 
 export function MatchFoundScreen() {
-  return <MatchmakingDuoGate>{(profile) => <MatchFoundContent profile={profile} />}</MatchmakingDuoGate>;
+  return (
+    <MatchmakingDuoGate>
+      {(data) => <MatchFoundContent {...data} />}
+    </MatchmakingDuoGate>
+  );
 }
 
-function MatchFoundContent({ profile }: { profile: DuoProfileStateWithImages }) {
-  const status = useMockMatchmakingStore((state) => statusForDuo(state, profile.duo.id));
-  const match = useMockMatchmakingStore((state) => state.match);
-
-  if (status === "idle") return <Redirect href="/(app)" />;
-  if (status === "waiting") return <Redirect href="/matchmaking/waiting" />;
-  if (!match || match.currentDuoId !== profile.duo.id) return <Redirect href="/(app)" />;
+function MatchFoundContent({ profile, matchmaking }: MatchmakingGateData) {
+  if (matchmaking.status === "waiting" || matchmaking.status === "eligible" || matchmaking.status === "matching") {
+    return <Redirect href="/matchmaking/waiting" />;
+  }
+  if (matchmaking.status !== "matched" || !matchmaking.match) return <Redirect href="/(app)" />;
+  const match = matchmaking.match;
 
   return (
     <LobbyScreen contentContainerStyle={styles.screen}>
-      <LobbyHeader title="Match Found" subtitle="Another duo has joined your mock session." />
+      <LobbyHeader title="Match Found" subtitle="Your server-backed duo match is ready." />
       <View style={styles.banner} accessibilityLiveRegion="polite">
         <Text style={styles.bannerCode}>MATCH CONFIRMED</Text>
         <Text style={styles.bannerTitle}>{profile.duo.name} × {match.opponent.name}</Text>
       </View>
       <MatchmakingSummary profile={profile} />
-      <FixtureDuoSummary duo={match.opponent} />
+      <OpponentDuoSummary duo={match.opponent} />
       <LobbyButton
         label="VIEW MATCHED PROFILE"
         detail="SIX COMBINED ANSWERS"
         onPress={() => router.push("/matchmaking/matched-profile")}
       />
       <LobbyButton
-        label="ENTER GROUP CHAT"
-        detail="CHAT ARRIVES LATER"
+        label="VIEW DUO CHAT"
+        detail="CHANNEL CREATED · MESSAGING PHASE 10"
         onPress={() => router.push("/(app)/duo-chats")}
       />
       <LobbyButton label="BACK TO LOBBY" onPress={() => router.replace("/(app)")} />

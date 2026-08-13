@@ -158,6 +158,116 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["duo_profile_contributions"]["Insert"]>;
         Relationships: [];
       };
+      queue_preferences: {
+        Row: {
+          duo_id: string;
+          region: string;
+          region_key: string;
+          minimum_age: number | null;
+          maximum_age: number | null;
+          activity_preferences: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          duo_id: string;
+          region: string;
+          region_key: string;
+          minimum_age?: number | null;
+          maximum_age?: number | null;
+          activity_preferences?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["queue_preferences"]["Insert"]>;
+        Relationships: [];
+      };
+      matchmaking_tickets: {
+        Row: {
+          id: string;
+          duo_id: string;
+          created_by_user_id: string;
+          status: Database["public"]["Enums"]["matchmaking_ticket_status"];
+          region_key: string;
+          queued_at: string;
+          eligible_at: string;
+          expires_at: string;
+          matched_at: string | null;
+          cancelled_at: string | null;
+          cancelled_by_user_id: string | null;
+          match_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          duo_id: string;
+          created_by_user_id: string;
+          status?: Database["public"]["Enums"]["matchmaking_ticket_status"];
+          region_key: string;
+          queued_at: string;
+          eligible_at: string;
+          expires_at: string;
+          matched_at?: string | null;
+          cancelled_at?: string | null;
+          cancelled_by_user_id?: string | null;
+          match_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["matchmaking_tickets"]["Insert"]>;
+        Relationships: [];
+      };
+      matches: {
+        Row: {
+          id: string;
+          status: Database["public"]["Enums"]["match_status"];
+          matched_at: string;
+          ended_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          status?: Database["public"]["Enums"]["match_status"];
+          matched_at?: string;
+          ended_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["matches"]["Insert"]>;
+        Relationships: [];
+      };
+      match_duos: {
+        Row: { match_id: string; duo_id: string; side: "a" | "b"; active: boolean; created_at: string };
+        Insert: { match_id: string; duo_id: string; side: "a" | "b"; active?: boolean; created_at?: string };
+        Update: { active?: boolean };
+        Relationships: [];
+      };
+      conversations: {
+        Row: { id: string; match_id: string; created_at: string; last_message_at: string | null };
+        Insert: { id?: string; match_id: string; created_at?: string; last_message_at?: string | null };
+        Update: { last_message_at?: string | null };
+        Relationships: [];
+      };
+      conversation_members: {
+        Row: {
+          conversation_id: string;
+          user_id: string;
+          joined_at: string;
+          last_read_at: string | null;
+          muted_until: string | null;
+        };
+        Insert: {
+          conversation_id: string;
+          user_id: string;
+          joined_at?: string;
+          last_read_at?: string | null;
+          muted_until?: string | null;
+        };
+        Update: { last_read_at?: string | null; muted_until?: string | null };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -211,12 +321,25 @@ export type Database = {
         Args: { image_path: string | null };
         Returns: Json;
       };
+      get_my_matchmaking_state: { Args: Record<PropertyKey, never>; Returns: Json };
+      enter_matchmaking: { Args: Record<PropertyKey, never>; Returns: Json };
+      cancel_my_matchmaking_ticket: { Args: Record<PropertyKey, never>; Returns: Json };
+      try_match_my_duo: { Args: Record<PropertyKey, never>; Returns: Json };
     };
     Enums: {
       duo_status: "forming" | "active";
       duo_member_role: "creator" | "member";
       duo_membership_status: "accepted";
       duo_invitation_status: "pending" | "accepted" | "revoked" | "expired";
+      matchmaking_ticket_status:
+        | "waiting"
+        | "eligible"
+        | "matching"
+        | "matched"
+        | "cancelled"
+        | "expired"
+        | "failed";
+      match_status: "active" | "ended";
     };
     CompositeTypes: Record<string, never>;
   };

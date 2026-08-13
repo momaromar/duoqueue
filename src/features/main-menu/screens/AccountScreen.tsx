@@ -7,14 +7,12 @@ import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
-import { useMockMatchmakingStore } from "@/src/features/matchmaking/mockMatchmakingStore";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
 export function AccountScreen() {
   const { signOut, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
-  const cancelQueue = useMockMatchmakingStore((state) => state.cancelQueue);
   let email = "Authenticated account";
   if (user?.email) email = user.email;
 
@@ -22,7 +20,6 @@ export function AccountScreen() {
     setIsSigningOut(true);
     setSignOutError(null);
     try {
-      cancelQueue();
       await signOut();
       router.replace("/welcome");
     } catch (error) {

@@ -1,17 +1,16 @@
 import { Redirect, router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 
-import type { DuoProfileStateWithImages, MemberColorKey } from "@/src/features/duo-profile/schemas";
+import type { MemberColorKey } from "@/src/features/duo-profile/schemas";
 import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
-import { FixtureDuoSummary } from "@/src/features/matchmaking/components/FixtureDuoSummary";
-import { MatchmakingDuoGate } from "@/src/features/matchmaking/components/MatchmakingDuoGate";
 import {
-  statusForDuo,
-  useMockMatchmakingStore,
-} from "@/src/features/matchmaking/mockMatchmakingStore";
+  MatchmakingDuoGate,
+  type MatchmakingGateData,
+} from "@/src/features/matchmaking/components/MatchmakingDuoGate";
+import { OpponentDuoSummary } from "@/src/features/matchmaking/components/OpponentDuoSummary";
 
 function contributionColor(colorKey: MemberColorKey) {
   if (colorKey === "member_a") return styles.memberA;
@@ -19,37 +18,33 @@ function contributionColor(colorKey: MemberColorKey) {
 }
 
 export function MatchedProfileScreen() {
-  return <MatchmakingDuoGate>{(profile) => <MatchedProfileContent profile={profile} />}</MatchmakingDuoGate>;
+  return (
+    <MatchmakingDuoGate>
+      {(data) => <MatchedProfileContent {...data} />}
+    </MatchmakingDuoGate>
+  );
 }
 
-function MatchedProfileContent({ profile }: { profile: DuoProfileStateWithImages }) {
-  const status = useMockMatchmakingStore((state) => statusForDuo(state, profile.duo.id));
-  const match = useMockMatchmakingStore((state) => state.match);
-
-  if (status === "idle") return <Redirect href="/(app)" />;
-  if (status === "waiting") return <Redirect href="/matchmaking/waiting" />;
-  if (!match || match.currentDuoId !== profile.duo.id) return <Redirect href="/(app)" />;
+function MatchedProfileContent({ matchmaking }: MatchmakingGateData) {
+  if (matchmaking.status === "waiting" || matchmaking.status === "eligible" || matchmaking.status === "matching") {
+    return <Redirect href="/matchmaking/waiting" />;
+  }
+  if (matchmaking.status !== "matched" || !matchmaking.match) return <Redirect href="/(app)" />;
+  const opponent = matchmaking.match.opponent;
 
   return (
     <LobbyScreen contentContainerStyle={styles.screen}>
-      <LobbyHeader
-        showBack
-        title={match.opponent.name}
-        subtitle="Fixture combined Duo Profile"
-      />
-      <FixtureDuoSummary duo={match.opponent} />
-      <Text style={styles.description}>{match.opponent.description}</Text>
+      <LobbyHeader showBack title={opponent.name} subtitle="Matched combined Duo Profile" />
+      <OpponentDuoSummary duo={opponent} />
+      {opponent.description && <Text style={styles.description}>{opponent.description}</Text>}
       <View style={styles.answers}>
-        {match.opponent.answers.map((answer) => (
-          <View
-            key={answer.promptId}
-            style={[styles.answer, contributionColor(answer.contributor.colorKey)]}
-          >
+        {opponent.answers.map((answer) => (
+          <View key={answer.promptId} style={[styles.answer, contributionColor(answer.colorKey)]}>
             <Text style={styles.promptNumber}>PROMPT {answer.sortOrder} OF 6</Text>
             <Text style={styles.question}>{answer.promptText}</Text>
             <Text style={styles.response}>{answer.responseText}</Text>
             <Text style={styles.contributor}>
-              Answered by {answer.contributor.displayName} · {answer.contributor.colorKey}
+              Answered by {answer.displayName} · {answer.colorKey}
             </Text>
           </View>
         ))}
