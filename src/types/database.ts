@@ -64,6 +64,8 @@ export type Database = {
           invited_by: string | null;
           joined_at: string;
           created_at: string;
+          profile_submitted_at: string | null;
+          profile_image_path: string | null;
         };
         Insert: {
           duo_id: string;
@@ -74,6 +76,8 @@ export type Database = {
           invited_by?: string | null;
           joined_at?: string;
           created_at?: string;
+          profile_submitted_at?: string | null;
+          profile_image_path?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["duo_members"]["Insert"]>;
         Relationships: [];
@@ -106,6 +110,52 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["duo_invitations"]["Insert"]>;
+        Relationships: [];
+      };
+      duo_profile_prompts: {
+        Row: {
+          id: number;
+          prompt_key: string;
+          prompt_text: string;
+          input_type: string;
+          is_required: boolean;
+          sort_order: number;
+          assigned_color_key: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          prompt_key: string;
+          prompt_text: string;
+          input_type?: string;
+          is_required?: boolean;
+          sort_order: number;
+          assigned_color_key: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["duo_profile_prompts"]["Insert"]>;
+        Relationships: [];
+      };
+      duo_profile_contributions: {
+        Row: {
+          id: string;
+          duo_id: string;
+          user_id: string;
+          prompt_id: number;
+          response_text: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          duo_id: string;
+          user_id: string;
+          prompt_id: number;
+          response_text: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["duo_profile_contributions"]["Insert"]>;
         Relationships: [];
       };
     };
@@ -148,6 +198,18 @@ export type Database = {
       delete_my_incomplete_duo: {
         Args: Record<PropertyKey, never>;
         Returns: undefined;
+      };
+      get_my_duo_profile_state: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      save_my_duo_profile_contributions: {
+        Args: { answers: Json; submit_answers?: boolean };
+        Returns: Json;
+      };
+      set_my_duo_profile_image: {
+        Args: { image_path: string | null };
+        Returns: Json;
       };
     };
     Enums: {

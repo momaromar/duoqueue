@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet } from "react-native";
 
@@ -25,18 +26,18 @@ export function AuthenticatedHomeScreen() {
   return (
     <Screen contentContainerStyle={styles.screen}>
       <AppText>PROTECTED ROUTE</AppText>
-      <AppText accessibilityRole="header">You’re in.</AppText>
+      <AppText accessibilityRole="header">Onboarding complete.</AppText>
       <AppText>Signed in as {userLabel}.</AppText>
       <AppText>
-        You’ve entered the authenticated portion of DuoQueue. Onboarding will be built in a
-        future milestone.
+        Your shared Duo Profile has all six contributed answers. The main product experience
+        remains a later milestone.
       </AppText>
       {signOutError && <AppText accessibilityLiveRegion="polite">{signOutError}</AppText>}
+      <AppButton label="View Duo Profile" onPress={() => router.push("/duo-profile-preview")} />
+      <AppButton label="Edit my answers" onPress={() => router.push("/duo/edit-contributions")} />
       <AppButton label="Sign out" onPress={submitSignOut} />
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: { gap: 16 },
-});
+const styles = StyleSheet.create({ screen: { gap: 16 } });

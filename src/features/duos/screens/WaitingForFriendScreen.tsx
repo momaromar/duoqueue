@@ -38,6 +38,7 @@ export function WaitingForFriendScreen() {
   if (!duoQuery.data.duo) return <Redirect href="/duo-choice" />;
 
   const duo = duoQuery.data.duo;
+  if (duo.status === "active") return <Redirect href="/" />;
 
   const submitDelete = async () => {
     setActionError(null);
@@ -62,7 +63,6 @@ export function WaitingForFriendScreen() {
   return (
     <Screen scroll contentContainerStyle={styles.screen}>
       <AppText accessibilityRole="header">
-        {duo.status === "active" && "Your duo is formed"}
         {duo.status === "forming" && "Waiting for your friend"}
       </AppText>
       <AppText>Duo: {duo.name}</AppText>
@@ -76,11 +76,6 @@ export function WaitingForFriendScreen() {
           </AppText>
         ))}
       </View>
-      {duo.status === "active" && (
-        <AppText>
-          Both members are ready. Shared Duo Profile contributions arrive in Phase 5.
-        </AppText>
-      )}
       {duo.status === "forming" && (
         <AppText>
           Share the invitation code with one friend, then refresh this screen after they
@@ -93,7 +88,7 @@ export function WaitingForFriendScreen() {
         loading={duoQuery.isFetching}
         onPress={() => void duoQuery.refetch()}
       />
-      {duo.status === "forming" && duo.isCreator && (
+      {duo.isCreator && (
         <>
           <AppButton label="Invitation controls" onPress={() => router.push("/duo/invite")} />
           <AppButton label="Edit duo basics" onPress={() => router.push("/edit-duo")} />

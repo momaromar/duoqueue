@@ -30,8 +30,8 @@ export function DuoStateErrorScreen({ error, onRetry }: DuoStateErrorScreenProps
       <AppText accessibilityRole="header">Could not load your duo</AppText>
       <AppText accessibilityLiveRegion="polite">{getErrorMessage(error)}</AppText>
       <AppText>
-        If the Phase 4 database migration has not been applied yet, run it in the
-        Supabase SQL Editor before retrying.
+        If the required database migration has not been applied yet, run the appropriate
+        file from the Supabase migrations folder in the SQL Editor before retrying.
       </AppText>
       {signOutError && (
         <AppText accessibilityLiveRegion="polite">{signOutError}</AppText>
