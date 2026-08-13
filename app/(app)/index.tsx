@@ -1,1 +1,3 @@
-export { AuthenticatedHomeScreen as default } from "@/src/features/auth/screens/AuthenticatedHomeScreen";
+import { MainMenuScreen } from "@/src/features/main-menu/screens/MainMenuScreen";
+
+export default MainMenuScreen;
