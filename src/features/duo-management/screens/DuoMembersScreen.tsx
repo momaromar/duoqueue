@@ -5,6 +5,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
+import { useLocalChatStore } from "@/src/features/chat/localChatStore";
 import { ManagementInput } from "@/src/features/duo-management/components/ManagementInput";
 import { disbandActiveDuo } from "@/src/features/duo-management/duoManagementService";
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
@@ -23,6 +24,7 @@ export function DuoMembersScreen() {
   const [confirmation, setConfirmation] = useState("");
   const [actionError, setActionError] = useState<string | null>(null);
   const mutation = useMutation({ mutationFn: disbandActiveDuo });
+  const resetLocalChat = useLocalChatStore((state) => state.reset);
   useCurrentDuoRealtime(duoQuery.data?.duo?.id, user?.id);
 
   if (duoQuery.isPending) return <LoadingView label="Loading duo membersâ€¦" />;
@@ -36,6 +38,7 @@ export function DuoMembersScreen() {
     setActionError(null);
     try {
       await mutation.mutateAsync();
+      resetLocalChat();
       await queryClient.invalidateQueries();
       router.replace("/duo-choice");
     } catch (error) {

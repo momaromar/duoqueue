@@ -3,6 +3,7 @@ import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "@/src/features/auth/AuthContext";
+import { useLocalChatStore } from "@/src/features/chat/localChatStore";
 import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
@@ -13,6 +14,7 @@ export function AccountScreen() {
   const { signOut, user } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
+  const resetLocalChat = useLocalChatStore((state) => state.reset);
   let email = "Authenticated account";
   if (user?.email) email = user.email;
 
@@ -20,6 +22,7 @@ export function AccountScreen() {
     setIsSigningOut(true);
     setSignOutError(null);
     try {
+      resetLocalChat();
       await signOut();
       router.replace("/welcome");
     } catch (error) {

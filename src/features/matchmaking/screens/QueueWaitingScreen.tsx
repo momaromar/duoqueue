@@ -44,6 +44,7 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
   const [remainingMs, setRemainingMs] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
   const lastMatchAttemptAt = useRef(0);
+  const cancellationStarted = useRef(false);
   const tryMutation = useMutation({ mutationFn: tryMatchDuo });
   const cancelMutation = useMutation({ mutationFn: cancelMatchmakingTicket });
   const serverOffsetMs = useMemo(
@@ -64,15 +65,17 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
   }, [serverOffsetMs, ticket]);
 
   const attemptMatchIfEligible = useCallback(async (force = false) => {
-    if (!ticket || tryMatchPending) return;
+    if (!ticket || tryMatchPending || cancellationStarted.current) return;
     const estimatedServerNow = Date.now() + serverOffsetMs;
     if (estimatedServerNow < Date.parse(ticket.eligibleAt)) return;
     if (!force && Date.now() - lastMatchAttemptAt.current < MATCH_RETRY_MS) return;
     lastMatchAttemptAt.current = Date.now();
     try {
       const nextState = await tryMatch();
-      applyState(nextState);
-      setActionError(null);
+      if (!cancellationStarted.current) {
+        applyState(nextState);
+        setActionError(null);
+      }
     } catch (error) {
       setActionError(getErrorMessage(error));
     }
@@ -114,12 +117,18 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
   }
 
   const cancel = async () => {
+    cancellationStarted.current = true;
     setActionError(null);
     try {
       const nextState = await cancelMutation.mutateAsync();
       queryClient.setQueryData(matchmakingStateKey(user?.id), nextState);
-      router.replace("/(app)");
+      if (nextState.status === "matched") {
+        router.replace("/matchmaking/matched");
+      } else {
+        router.replace("/(app)");
+      }
     } catch (error) {
+      cancellationStarted.current = false;
       setActionError(getErrorMessage(error));
     }
   };
@@ -148,7 +157,7 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
       {actionError && <Text accessibilityLiveRegion="polite" style={styles.error}>{actionError}</Text>}
       <LobbyButton
         label="REFRESH STATUS"
-        disabled={tryMatchPending || cancelMutation.isPending}
+        disabled={cancelMutation.isPending}
         onPress={() => {
           refetchMatchmaking();
           void attemptMatchIfEligible(true);
@@ -157,7 +166,7 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
       {ticket.canCancel && (
         <LobbyButton
           label="CANCEL QUEUE"
-          disabled={tryMatchPending || cancelMutation.isPending}
+          disabled={cancelMutation.isPending}
           onPress={() => void cancel()}
         />
       )}
