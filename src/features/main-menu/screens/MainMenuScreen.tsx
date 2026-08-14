@@ -1,5 +1,5 @@
 import { Image } from "expo-image";
-import { Redirect, router, useFocusEffect } from "expo-router";
+import { Redirect, router, useFocusEffect, type Href } from "expo-router";
 import { useCallback } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
@@ -158,8 +158,8 @@ export function MainMenuScreen() {
       <View style={styles.menu} accessibilityLabel="Lobby menu">
         <LobbyButton
           label="DUO"
-          detail="PROFILE & ANSWERS"
-          onPress={() => router.push("/duo-profile-preview")}
+          detail="MANAGE YOUR DUO"
+          onPress={() => router.push("/duo" as Href)}
         />
         <LobbyButton
           label="DUO CHATS"

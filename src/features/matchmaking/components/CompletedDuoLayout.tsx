@@ -4,7 +4,10 @@ import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { ConfigurationRequiredScreen } from "@/src/features/auth/screens/ConfigurationRequiredScreen";
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
-import { useCurrentDuoState } from "@/src/features/duos/useCurrentDuoState";
+import {
+  useCurrentDuoRealtime,
+  useCurrentDuoState,
+} from "@/src/features/duos/useCurrentDuoState";
 
 export function CompletedDuoLayout() {
   const { configurationError, isAuthenticated, isInitializing, isPasswordRecovery, user } =
@@ -12,6 +15,7 @@ export function CompletedDuoLayout() {
   let duoUserId: string | undefined;
   if (!isInitializing && isAuthenticated && !isPasswordRecovery) duoUserId = user?.id;
   const duoQuery = useCurrentDuoState(duoUserId);
+  useCurrentDuoRealtime(duoQuery.data?.duo?.id, user?.id);
   if (configurationError) return <ConfigurationRequiredScreen />;
   if (isInitializing) return <LoadingView label="Restoring session…" />;
   if (isPasswordRecovery) return <Redirect href="/update-password" />;

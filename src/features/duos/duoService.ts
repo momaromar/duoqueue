@@ -8,6 +8,8 @@ import {
   type EditDuoValues,
 } from "@/src/features/duos/schemas";
 
+let duoChannelSequence = 0;
+
 function requireSupabase() {
   if (!supabase) {
     throw new Error(`Missing Supabase configuration: ${missingPublicEnv.join(", ")}`);
@@ -81,4 +83,21 @@ export async function regenerateInvitation() {
 export async function deleteIncompleteDuo() {
   const { error } = await requireSupabase().rpc("delete_my_incomplete_duo");
   if (error) throw error;
+}
+
+export function subscribeToDuo(duoId: string, onChange: () => void) {
+  const client = requireSupabase();
+  duoChannelSequence += 1;
+  const channel = client
+    .channel(`duo:${duoId}:${duoChannelSequence}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "duos", filter: `id=eq.${duoId}` },
+      onChange,
+    )
+    .subscribe();
+
+  return () => {
+    void client.removeChannel(channel);
+  };
 }

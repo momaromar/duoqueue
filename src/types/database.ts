@@ -166,6 +166,7 @@ export type Database = {
           minimum_age: number | null;
           maximum_age: number | null;
           activity_preferences: Json;
+          availability_windows: Json;
           created_at: string;
           updated_at: string;
         };
@@ -176,6 +177,7 @@ export type Database = {
           minimum_age?: number | null;
           maximum_age?: number | null;
           activity_preferences?: Json;
+          availability_windows?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -268,6 +270,12 @@ export type Database = {
         Update: { last_read_at?: string | null; muted_until?: string | null };
         Relationships: [];
       };
+      duo_disband_image_cleanup: {
+        Row: { object_path: string; authorized_user_id: string; created_at: string };
+        Insert: { object_path: string; authorized_user_id: string; created_at?: string };
+        Update: { authorized_user_id?: string; created_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -325,6 +333,30 @@ export type Database = {
       enter_matchmaking: { Args: Record<PropertyKey, never>; Returns: Json };
       cancel_my_matchmaking_ticket: { Args: Record<PropertyKey, never>; Returns: Json };
       try_match_my_duo: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_queue_preferences: { Args: Record<PropertyKey, never>; Returns: Json };
+      update_my_queue_preferences: {
+        Args: {
+          display_region: string;
+          minimum_age?: number | null;
+          maximum_age?: number | null;
+          activity_preferences?: Json;
+          availability_windows?: Json;
+        };
+        Returns: Json;
+      };
+      update_my_duo_basics: {
+        Args: { duo_name: string; duo_city: string; duo_description?: string | null };
+        Returns: undefined;
+      };
+      disband_my_duo: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_my_pending_disband_image_cleanup: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      finalize_my_disband_image_cleanup: {
+        Args: { image_paths: string[] };
+        Returns: undefined;
+      };
     };
     Enums: {
       duo_status: "forming" | "active";
