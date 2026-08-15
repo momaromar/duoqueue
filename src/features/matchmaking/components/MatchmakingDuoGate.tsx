@@ -15,7 +15,7 @@ import {
 export type MatchmakingGateData = {
   profile: DuoProfileStateWithImages;
   matchmaking: MatchmakingStateWithImages;
-  refetchMatchmaking: () => void;
+  refetchMatchmaking: () => Promise<unknown>;
 };
 
 type MatchmakingDuoGateProps = {
@@ -54,6 +54,6 @@ export function MatchmakingDuoGate({ children }: MatchmakingDuoGateProps) {
   return children({
     profile,
     matchmaking: matchmakingQuery.data,
-    refetchMatchmaking: () => void matchmakingQuery.refetch(),
+    refetchMatchmaking: matchmakingQuery.refetch,
   });
 }

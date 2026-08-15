@@ -45,6 +45,7 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
   const [actionError, setActionError] = useState<string | null>(null);
   const lastMatchAttemptAt = useRef(0);
   const cancellationStarted = useRef(false);
+  const matchAttemptInFlight = useRef(false);
   const tryMutation = useMutation({ mutationFn: tryMatchDuo });
   const cancelMutation = useMutation({ mutationFn: cancelMatchmakingTicket });
   const serverOffsetMs = useMemo(
@@ -52,34 +53,44 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
     [matchmaking.serverNow],
   );
   const tryMatch = tryMutation.mutateAsync;
-  const tryMatchPending = tryMutation.isPending;
+  const ticketRef = useRef(ticket);
+  const serverOffsetRef = useRef(serverOffsetMs);
+  const tryMatchRef = useRef(tryMatch);
+  ticketRef.current = ticket;
+  serverOffsetRef.current = serverOffsetMs;
+  tryMatchRef.current = tryMatch;
 
   const applyState = useCallback((nextState: Awaited<ReturnType<typeof tryMatchDuo>>) => {
     queryClient.setQueryData(matchmakingStateKey(user?.id), nextState);
   }, [queryClient, user?.id]);
 
   const refreshCountdown = useCallback(() => {
-    if (!ticket) return;
-    const estimatedServerNow = Date.now() + serverOffsetMs;
-    setRemainingMs(Math.max(0, Date.parse(ticket.eligibleAt) - estimatedServerNow));
-  }, [serverOffsetMs, ticket]);
+    const currentTicket = ticketRef.current;
+    if (!currentTicket) return;
+    const estimatedServerNow = Date.now() + serverOffsetRef.current;
+    setRemainingMs(Math.max(0, Date.parse(currentTicket.eligibleAt) - estimatedServerNow));
+  }, []);
 
   const attemptMatchIfEligible = useCallback(async (force = false) => {
-    if (!ticket || tryMatchPending || cancellationStarted.current) return;
-    const estimatedServerNow = Date.now() + serverOffsetMs;
-    if (estimatedServerNow < Date.parse(ticket.eligibleAt)) return;
+    const currentTicket = ticketRef.current;
+    if (!currentTicket || matchAttemptInFlight.current || cancellationStarted.current) return;
+    const estimatedServerNow = Date.now() + serverOffsetRef.current;
+    if (estimatedServerNow < Date.parse(currentTicket.eligibleAt)) return;
     if (!force && Date.now() - lastMatchAttemptAt.current < MATCH_RETRY_MS) return;
     lastMatchAttemptAt.current = Date.now();
+    matchAttemptInFlight.current = true;
     try {
-      const nextState = await tryMatch();
+      const nextState = await tryMatchRef.current();
       if (!cancellationStarted.current) {
         applyState(nextState);
         setActionError(null);
       }
     } catch (error) {
       setActionError(getErrorMessage(error));
+    } finally {
+      matchAttemptInFlight.current = false;
     }
-  }, [applyState, serverOffsetMs, ticket, tryMatch, tryMatchPending]);
+  }, [applyState]);
 
   useEffect(() => {
     refreshCountdown();
@@ -89,7 +100,7 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
     }, 1000);
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
-        refetchMatchmaking();
+        void refetchMatchmaking();
         void attemptMatchIfEligible(true);
       }
     });
@@ -100,7 +111,7 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
   }, [attemptMatchIfEligible, refetchMatchmaking, refreshCountdown]);
 
   useFocusEffect(useCallback(() => {
-    refetchMatchmaking();
+    void refetchMatchmaking();
     refreshCountdown();
     void attemptMatchIfEligible(true);
   }, [attemptMatchIfEligible, refetchMatchmaking, refreshCountdown]));
@@ -159,7 +170,7 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
         label="REFRESH STATUS"
         disabled={cancelMutation.isPending}
         onPress={() => {
-          refetchMatchmaking();
+          void refetchMatchmaking();
           void attemptMatchIfEligible(true);
         }}
       />
