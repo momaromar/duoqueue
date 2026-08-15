@@ -1,20 +1,42 @@
-import { router } from "expo-router";
-import { useState } from "react";
+import { router, useFocusEffect, type Href } from "expo-router";
+import { useCallback, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
+import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
+import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
+import { useCurrentDuoState } from "@/src/features/duos/useCurrentDuoState";
 import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
+function formatAccountDate(value: string | undefined) {
+  if (!value) return "Unavailable";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Unavailable";
+  return date.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+}
+
 export function AccountScreen() {
   const { signOut, user } = useAuth();
+  const duoQuery = useCurrentDuoState(user?.id);
+  const refetchDuo = duoQuery.refetch;
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
-  let email = "Authenticated account";
-  if (user?.email) email = user.email;
+
+  useFocusEffect(useCallback(() => {
+    void refetchDuo();
+  }, [refetchDuo]));
+
+  if (duoQuery.isPending) return <LoadingView label="Loading account…" />;
+  if (duoQuery.error) return <DuoStateErrorScreen error={duoQuery.error} onRetry={duoQuery.refetch} />;
+
+  const duo = duoQuery.data?.duo;
+  const email = user?.email ?? "Authenticated account";
+  let verification = "Not verified";
+  if (user?.email_confirmed_at) verification = "Verified";
 
   const submitSignOut = async () => {
     setIsSigningOut(true);
@@ -30,41 +52,54 @@ export function AccountScreen() {
 
   return (
     <LobbyScreen contentContainerStyle={styles.screen}>
-      <LobbyHeader showBack title="Account" subtitle="Your current DuoQueue session." />
+      <LobbyHeader showBack title="Account" subtitle="Your account, duo, and saved preferences." />
       <View style={styles.panel}>
-        <Text style={styles.label}>SIGNED IN AS</Text>
-        <Text style={styles.email}>{email}</Text>
-        <Text style={styles.note}>
-          Notification, privacy, safety, and full account controls arrive in their later phases.
-        </Text>
+        <Text style={styles.label}>ACCOUNT</Text>
+        <Detail label="Email" value={email} />
+        <Detail label="Email status" value={verification} />
+        <Detail label="Created" value={formatAccountDate(user?.created_at)} />
       </View>
-      {signOutError && (
-        <Text accessibilityLiveRegion="polite" style={styles.error}>{signOutError}</Text>
-      )}
-      <LobbyButton
-        label="SIGN OUT"
-        detail="END THIS SESSION"
-        disabled={isSigningOut}
-        accessibilityState={{ disabled: isSigningOut, busy: isSigningOut }}
-        onPress={() => void submitSignOut()}
-      />
+      <View style={styles.panel}>
+        <Text style={styles.label}>CURRENT DUO</Text>
+        <Detail label="Name" value={duo?.name ?? "No active duo"} />
+        <Detail label="Region" value={duo?.city ?? "Unavailable"} />
+        <Detail label="Members" value={duo?.members.map((member) => member.displayName).join(" + ") ?? "Unavailable"} />
+      </View>
+      <View style={styles.menuRow}>
+        <LobbyButton label="DUO" detail="MANAGE SHARED PROFILE" disabled={isSigningOut} onPress={() => router.push("/duo" as Href)} />
+        <LobbyButton label="NOTIFICATIONS" detail="SAVED PREFERENCES" disabled={isSigningOut} onPress={() => router.push("/settings/notifications" as Href)} />
+      </View>
+      <LobbyButton label="CHANGE PASSWORD" detail="VERIFY BY EMAIL CODE" disabled={isSigningOut} onPress={() => router.push("/settings/change-password" as Href)} />
+      <View style={styles.privacyPanel}>
+        <Text style={styles.privacyTitle}>PRIVACY & SAFETY</Text>
+        <Text style={styles.note}>Your authentication email is private and is not included in duo profiles, invitation previews, matchmaking profiles, or chats. Full report and block controls arrive in Phase 13.</Text>
+      </View>
+      {signOutError && <Text accessibilityLiveRegion="polite" style={styles.error}>{signOutError}</Text>}
+      <LobbyButton label="SIGN OUT" detail="END THIS SESSION" disabled={isSigningOut} accessibilityState={{ disabled: isSigningOut, busy: isSigningOut }} onPress={() => void submitSignOut()} />
       <LobbyButton label="BACK TO LOBBY" disabled={isSigningOut} onPress={() => router.back()} />
     </LobbyScreen>
   );
 }
 
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.detailRow}>
+      <Text style={styles.detailLabel}>{label}</Text>
+      <Text selectable style={styles.detailValue}>{value}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  screen: { gap: 20 },
-  panel: {
-    gap: 10,
-    borderWidth: 1,
-    borderColor: lobbyColors.border,
-    borderRadius: 14,
-    backgroundColor: lobbyColors.surface,
-    padding: 18,
-  },
+  screen: { gap: 16 },
+  panel: { gap: 10, borderWidth: 1, borderColor: lobbyColors.border, borderRadius: 14, backgroundColor: lobbyColors.surface, padding: 18 },
   label: { color: lobbyColors.cyan, fontSize: 12, fontWeight: "900", letterSpacing: 1.8 },
-  email: { color: lobbyColors.text, fontSize: 19, fontWeight: "700" },
-  note: { color: lobbyColors.muted, lineHeight: 21 },
+  detailRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 14 },
+  detailLabel: { color: lobbyColors.muted, lineHeight: 20 },
+  detailValue: { flex: 1, color: lobbyColors.text, fontWeight: "700", lineHeight: 20, textAlign: "right" },
+  menuRow: { flexDirection: "row", gap: 10 },
+  privacyPanel: { gap: 8, borderWidth: 1, borderColor: lobbyColors.magenta, borderRadius: 14, backgroundColor: lobbyColors.surface, padding: 18 },
+  privacyTitle: { color: lobbyColors.magenta, fontSize: 12, fontWeight: "900", letterSpacing: 1.6 },
+  note: { color: lobbyColors.text, lineHeight: 21 },
   error: { color: lobbyColors.danger, lineHeight: 20 },
 });

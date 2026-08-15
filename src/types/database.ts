@@ -292,6 +292,37 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      notification_preferences: {
+        Row: {
+          user_id: string;
+          duo_invitations_enabled: boolean;
+          queue_status_enabled: boolean;
+          matches_enabled: boolean;
+          messages_enabled: boolean;
+          product_updates_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          duo_invitations_enabled?: boolean;
+          queue_status_enabled?: boolean;
+          matches_enabled?: boolean;
+          messages_enabled?: boolean;
+          product_updates_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          duo_invitations_enabled?: boolean;
+          queue_status_enabled?: boolean;
+          matches_enabled?: boolean;
+          messages_enabled?: boolean;
+          product_updates_enabled?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       duo_disband_image_cleanup: {
         Row: { object_path: string; authorized_user_id: string; created_at: string };
         Insert: { object_path: string; authorized_user_id: string; created_at?: string };
@@ -398,6 +429,20 @@ export type Database = {
       };
       get_my_conversation_summary: {
         Args: { conversation_id: string };
+        Returns: Json;
+      };
+      get_my_notification_preferences: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      update_my_notification_preferences: {
+        Args: {
+          duo_invitations_enabled: boolean;
+          queue_status_enabled: boolean;
+          matches_enabled: boolean;
+          messages_enabled: boolean;
+          product_updates_enabled: boolean;
+        };
         Returns: Json;
       };
     };

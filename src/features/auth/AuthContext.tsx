@@ -32,6 +32,8 @@ type AuthContextValue = {
   requestPasswordReset: (email: string) => Promise<void>;
   resendVerification: (email: string) => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
+  requestPasswordReauthentication: () => Promise<void>;
+  updatePasswordWithNonce: (password: string, nonce: string) => Promise<void>;
   clearAuthLinkError: () => void;
 };
 
@@ -227,6 +229,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await requireSupabase().auth.updateUser({ password });
         if (error) throw error;
         setIsPasswordRecovery(false);
+      },
+      requestPasswordReauthentication: async () => {
+        const { error } = await requireSupabase().auth.reauthenticate();
+        if (error) throw error;
+      },
+      updatePasswordWithNonce: async (password, nonce) => {
+        const { error } = await requireSupabase().auth.updateUser({ password, nonce });
+        if (error) throw error;
       },
       clearAuthLinkError: () => setAuthLinkError(null),
     }),

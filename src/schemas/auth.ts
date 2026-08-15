@@ -31,7 +31,19 @@ export const updatePasswordSchema = z
     path: ["confirmPassword"],
   });
 
+export const changePasswordWithNonceSchema = z
+  .object({
+    nonce: z.string().trim().regex(/^\d{6}$/, "Enter the six-digit verification code."),
+    password,
+    confirmPassword: z.string(),
+  })
+  .refine((values) => values.password === values.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 export type UpdatePasswordValues = z.infer<typeof updatePasswordSchema>;
+export type ChangePasswordWithNonceValues = z.infer<typeof changePasswordWithNonceSchema>;
