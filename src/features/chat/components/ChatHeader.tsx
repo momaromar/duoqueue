@@ -18,7 +18,7 @@ export function ChatHeader({ ownDuoName, opponentDuoName }: ChatHeaderProps) {
       </Pressable>
       <View style={styles.titleGroup}>
         <Text accessibilityRole="header" style={styles.title}>{ownDuoName} Ã— {opponentDuoName}</Text>
-        <Text style={styles.subtitle}>SESSION-ONLY CHAT PREVIEW</Text>
+        <Text style={styles.subtitle}>LIVE DUO CHAT</Text>
       </View>
       <Pressable
         accessibilityRole="button"
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   backText: { color: lobbyColors.cyan, fontWeight: "900", letterSpacing: 1 },
   titleGroup: { flex: 1, alignItems: "center", gap: 3 },
   title: { color: lobbyColors.text, fontSize: 16, fontWeight: "900", textAlign: "center" },
-  subtitle: { color: lobbyColors.magenta, fontSize: 10, fontWeight: "800", letterSpacing: 1.2, textAlign: "center" },
+  subtitle: { color: lobbyColors.green, fontSize: 10, fontWeight: "800", letterSpacing: 1.2, textAlign: "center" },
   profile: { minHeight: 44, justifyContent: "center" },
   profileText: { color: lobbyColors.green, fontSize: 12, fontWeight: "900", letterSpacing: 1 },
   pressed: { opacity: 0.6 },

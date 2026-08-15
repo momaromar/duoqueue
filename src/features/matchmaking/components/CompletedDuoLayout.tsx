@@ -3,7 +3,6 @@ import { Redirect, Stack } from "expo-router";
 import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { ConfigurationRequiredScreen } from "@/src/features/auth/screens/ConfigurationRequiredScreen";
-import { useLocalChatLifecycle } from "@/src/features/chat/useLocalChatLifecycle";
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
 import {
   useCurrentDuoRealtime,
@@ -16,7 +15,6 @@ export function CompletedDuoLayout() {
   let duoUserId: string | undefined;
   if (!isInitializing && isAuthenticated && !isPasswordRecovery) duoUserId = user?.id;
   const duoQuery = useCurrentDuoState(duoUserId);
-  useLocalChatLifecycle(user?.id, duoQuery.data?.duo?.id);
   useCurrentDuoRealtime(duoQuery.data?.duo?.id, user?.id);
   if (configurationError) return <ConfigurationRequiredScreen />;
   if (isInitializing) return <LoadingView label="Restoring session…" />;

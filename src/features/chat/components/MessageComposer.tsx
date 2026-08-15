@@ -22,10 +22,10 @@ export function MessageComposer({ onSend }: MessageComposerProps) {
     <View style={styles.wrapper}>
       <View style={styles.inputGroup}>
         <TextInput
-          accessibilityLabel="Local chat message"
+          accessibilityLabel="Chat message"
           value={body}
           onChangeText={setBody}
-          placeholder="Write a local preview messageâ€¦"
+          placeholder="Write a messageâ€¦"
           placeholderTextColor={lobbyColors.muted}
           multiline
           maxLength={MAX_MESSAGE_LENGTH}
@@ -35,7 +35,7 @@ export function MessageComposer({ onSend }: MessageComposerProps) {
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Send local message"
+        accessibilityLabel="Send message"
         accessibilityState={{ disabled: !canSend }}
         disabled={!canSend}
         onPress={submit}

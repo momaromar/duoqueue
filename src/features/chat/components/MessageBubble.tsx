@@ -18,9 +18,9 @@ export function MessageBubble({ message, currentUserId, onRetry }: MessageBubble
   let senderLabel = message.sender.displayName;
   if (isOwn) senderLabel = "You";
   let statusLabel = "";
-  if (message.deliveryStatus === "pending") statusLabel = "Sending locallyâ€¦";
+  if (message.deliveryStatus === "pending") statusLabel = "Sendingâ€¦";
   if (message.deliveryStatus === "failed") {
-    statusLabel = "Local send failed";
+    statusLabel = message.failureReason ?? "Message failed to send";
   }
 
   return (

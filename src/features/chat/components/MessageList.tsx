@@ -3,19 +3,20 @@ import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { MessageBubble } from "@/src/features/chat/components/MessageBubble";
 import { SystemMessage } from "@/src/features/chat/components/SystemMessage";
-import type { LocalChatMessage } from "@/src/features/chat/types";
+import type { ChatMessage } from "@/src/features/chat/types";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
 type MessageListProps = {
-  messages: LocalChatMessage[];
+  messages: ChatMessage[];
   currentUserId: string;
   hasOlder: boolean;
+  isLoadingOlder: boolean;
   onLoadOlder: () => void;
   onRetry: (messageId: string) => void;
 };
 
-export function MessageList({ messages, currentUserId, hasOlder, onLoadOlder, onRetry }: MessageListProps) {
-  const listRef = useRef<FlatList<LocalChatMessage>>(null);
+export function MessageList({ messages, currentUserId, hasOlder, isLoadingOlder, onLoadOlder, onRetry }: MessageListProps) {
+  const listRef = useRef<FlatList<ChatMessage>>(null);
   const previousLatestId = useRef<string | null>(null);
   const shouldScrollToEnd = useRef(false);
   const latestId = messages.at(-1)?.id ?? null;
@@ -27,12 +28,20 @@ export function MessageList({ messages, currentUserId, hasOlder, onLoadOlder, on
   }, [latestId]);
 
   let listHeader = (
-    <View style={styles.start}><Text style={styles.startText}>START OF LOCAL PREVIEW</Text></View>
+    <View style={styles.start}><Text style={styles.startText}>START OF CONVERSATION</Text></View>
   );
   if (hasOlder) {
+    let loadingLabel = "LOAD EARLIER MESSAGES";
+    if (isLoadingOlder) loadingLabel = "LOADINGâ€¦";
     listHeader = (
-      <Pressable accessibilityRole="button" onPress={onLoadOlder} style={({ pressed }) => [styles.loadOlder, pressed && styles.pressed]}>
-        <Text style={styles.loadOlderText}>LOAD EARLIER LOCAL MESSAGES</Text>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ busy: isLoadingOlder, disabled: isLoadingOlder }}
+        disabled={isLoadingOlder}
+        onPress={onLoadOlder}
+        style={({ pressed }) => [styles.loadOlder, pressed && styles.pressed]}
+      >
+        <Text style={styles.loadOlderText}>{loadingLabel}</Text>
       </Pressable>
     );
   }
@@ -53,6 +62,7 @@ export function MessageList({ messages, currentUserId, hasOlder, onLoadOlder, on
       maxToRenderPerBatch={12}
       windowSize={7}
       keyboardShouldPersistTaps="handled"
+      maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
       onContentSizeChange={() => {
         if (!shouldScrollToEnd.current) return;
         shouldScrollToEnd.current = false;

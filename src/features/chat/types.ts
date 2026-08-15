@@ -8,12 +8,6 @@ export type ChatParticipant = {
   side: "own" | "opponent";
 };
 
-export type ChatScope = {
-  userId: string;
-  duoId: string;
-  conversationId: string;
-};
-
 export type ChatSystemMessage = {
   id: string;
   kind: "system";
@@ -28,14 +22,29 @@ export type ChatTextMessage = {
   createdAt: string;
   sender: ChatParticipant;
   deliveryStatus: ChatDeliveryStatus;
+  failureReason: string | null;
 };
 
-export type LocalChatMessage = ChatSystemMessage | ChatTextMessage;
+export type ChatMessage = ChatSystemMessage | ChatTextMessage;
 
-export type ChatFixtureInput = {
-  scope: ChatScope;
-  participants: ChatParticipant[];
-  matchedAt: string;
-  ownDuoName: string;
-  opponentDuoName: string;
+export type ChatMessageRecord = {
+  id: string;
+  conversationId: string;
+  kind: "system" | "text";
+  body: string;
+  createdAt: string;
+  senderUserId: string | null;
 };
+
+export type ChatCursor = { createdAt: string; messageId: string };
+export type ChatPage = { items: ChatMessageRecord[]; nextCursor: ChatCursor | null };
+
+export type ConversationSummary = {
+  conversationId: string;
+  lastActivityAt: string;
+  lastReadAt: string | null;
+  unreadCount: number;
+  lastMessage: ChatMessageRecord | null;
+};
+
+export type ChatOutboxMessage = ChatTextMessage & { conversationId: string };

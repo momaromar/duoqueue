@@ -270,6 +270,28 @@ export type Database = {
         Update: { last_read_at?: string | null; muted_until?: string | null };
         Relationships: [];
       };
+      messages: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          sender_id: string | null;
+          message_type: "text" | "system";
+          body: string;
+          event_key: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          conversation_id: string;
+          sender_id?: string | null;
+          message_type: "text" | "system";
+          body: string;
+          event_key?: string | null;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
       duo_disband_image_cleanup: {
         Row: { object_path: string; authorized_user_id: string; created_at: string };
         Insert: { object_path: string; authorized_user_id: string; created_at?: string };
@@ -356,6 +378,27 @@ export type Database = {
       finalize_my_disband_image_cleanup: {
         Args: { image_paths: string[] };
         Returns: undefined;
+      };
+      get_conversation_messages: {
+        Args: {
+          conversation_id: string;
+          before_created_at?: string | null;
+          before_message_id?: string | null;
+          page_size?: number;
+        };
+        Returns: Json;
+      };
+      send_conversation_message: {
+        Args: { conversation_id: string; client_message_id: string; body: string };
+        Returns: Json;
+      };
+      mark_conversation_read: {
+        Args: { conversation_id: string };
+        Returns: Json;
+      };
+      get_my_conversation_summary: {
+        Args: { conversation_id: string };
+        Returns: Json;
       };
     };
     Enums: {
