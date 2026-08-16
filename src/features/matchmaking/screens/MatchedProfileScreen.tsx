@@ -11,6 +11,7 @@ import {
   type MatchmakingGateData,
 } from "@/src/features/matchmaking/components/MatchmakingDuoGate";
 import { OpponentDuoSummary } from "@/src/features/matchmaking/components/OpponentDuoSummary";
+import { SafetyActions } from "@/src/features/safety/components/SafetyActions";
 
 function contributionColor(colorKey: MemberColorKey) {
   if (colorKey === "member_a") return styles.memberA;
@@ -49,6 +50,11 @@ function MatchedProfileContent({ matchmaking }: MatchmakingGateData) {
           </View>
         ))}
       </View>
+      <SafetyActions
+        matchId={matchmaking.match.id}
+        opponentDuoName={opponent.name}
+        conversationId={matchmaking.match.conversationId}
+      />
       <LobbyButton label="BACK TO MATCH" onPress={() => router.back()} />
     </LobbyScreen>
   );

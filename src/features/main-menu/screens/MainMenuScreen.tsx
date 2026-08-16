@@ -51,7 +51,7 @@ export function MainMenuScreen() {
   const refetchProfile = profileQuery.refetch;
   const refetchMatchmaking = matchmakingQuery.refetch;
   const matchmakingDuoId = matchmakingQuery.data?.duo?.id;
-  useMatchmakingRealtime(matchmakingDuoId, user?.id);
+  useMatchmakingRealtime(matchmakingDuoId, user?.id, matchmakingQuery.data?.match?.id);
 
   useFocusEffect(useCallback(() => {
     if (user?.id) {

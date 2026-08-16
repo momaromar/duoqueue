@@ -38,7 +38,7 @@ export function DuoChatsScreen() {
   const refetchMatchmaking = matchmakingQuery.refetch;
   const refetchProfile = profileQuery.refetch;
   const duoId = matchmakingQuery.data?.duo?.id;
-  useMatchmakingRealtime(duoId, user?.id);
+  useMatchmakingRealtime(duoId, user?.id, matchmakingQuery.data?.match?.id);
 
   useFocusEffect(useCallback(() => {
     void refetchMatchmaking();

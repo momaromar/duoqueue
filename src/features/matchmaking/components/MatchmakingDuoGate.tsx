@@ -28,7 +28,7 @@ export function MatchmakingDuoGate({ children }: MatchmakingDuoGateProps) {
   const profileQuery = useDuoProfileState(user?.id);
   const matchmakingQuery = useMatchmakingState(user?.id);
   const realtimeDuoId = matchmakingQuery.data?.duo?.id;
-  useMatchmakingRealtime(realtimeDuoId, user?.id);
+  useMatchmakingRealtime(realtimeDuoId, user?.id, matchmakingQuery.data?.match?.id);
 
   if (duoQuery.isPending || profileQuery.isPending || matchmakingQuery.isPending) {
     return <LoadingView label="Checking queue readiness…" />;

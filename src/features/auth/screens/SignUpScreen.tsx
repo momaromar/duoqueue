@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -104,7 +104,7 @@ export function SignUpScreen() {
             <View style={styles.agreementGroup}>
               <Pressable
                 accessibilityRole="checkbox"
-                accessibilityLabel="Agree to the Terms and Privacy Policy placeholders"
+                accessibilityLabel="Confirm you are 18 or older and agree to the development Terms and Privacy Policy"
                 accessibilityState={{ checked: value }}
                 onPress={() => onChange(!value)}
                 style={styles.agreementRow}
@@ -113,7 +113,7 @@ export function SignUpScreen() {
                   <AppText>{value && "✓"}</AppText>
                 </View>
                 <AppText style={styles.agreementText}>
-                  I agree to the Terms and Privacy Policy placeholders.
+                  I confirm I am 18 or older and agree to the development Terms and Privacy Policy.
                 </AppText>
               </Pressable>
               {error && <AppText accessibilityLiveRegion="polite">{error.message}</AppText>}
@@ -126,6 +126,11 @@ export function SignUpScreen() {
           loading={isSubmitting}
           onPress={handleSubmit(submit)}
         />
+        <View style={styles.legalLinks}>
+          <AppButton label="Read Terms" onPress={() => router.push("/legal/terms" as Href)} />
+          <AppButton label="Read Privacy Policy" onPress={() => router.push("/legal/privacy" as Href)} />
+          <AppButton label="Community Guidelines" onPress={() => router.push("/legal/community-guidelines" as Href)} />
+        </View>
         <AppButton
           label="Already have an account? Sign in"
           onPress={() => router.replace("/sign-in")}
@@ -148,4 +153,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   agreementText: { flex: 1 },
+  legalLinks: { gap: 8 },
 });

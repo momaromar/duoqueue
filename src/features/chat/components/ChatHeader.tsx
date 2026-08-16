@@ -3,9 +3,9 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
-type ChatHeaderProps = { ownDuoName: string; opponentDuoName: string };
+type ChatHeaderProps = { ownDuoName: string; opponentDuoName: string; onOpenSafety: () => void };
 
-export function ChatHeader({ ownDuoName, opponentDuoName }: ChatHeaderProps) {
+export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety }: ChatHeaderProps) {
   return (
     <View style={styles.header}>
       <Pressable
@@ -28,6 +28,14 @@ export function ChatHeader({ ownDuoName, opponentDuoName }: ChatHeaderProps) {
       >
         <Text style={styles.profileText}>PROFILE</Text>
       </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Open conversation safety actions"
+        onPress={onOpenSafety}
+        style={({ pressed }) => [styles.profile, pressed && styles.pressed]}
+      >
+        <Text style={styles.safetyText}>SAFETY</Text>
+      </Pressable>
     </View>
   );
 }
@@ -41,5 +49,6 @@ const styles = StyleSheet.create({
   subtitle: { color: lobbyColors.green, fontSize: 10, fontWeight: "800", letterSpacing: 1.2, textAlign: "center" },
   profile: { minHeight: 44, justifyContent: "center" },
   profileText: { color: lobbyColors.green, fontSize: 12, fontWeight: "900", letterSpacing: 1 },
+  safetyText: { color: lobbyColors.danger, fontSize: 12, fontWeight: "900", letterSpacing: 1 },
   pressed: { opacity: 0.6 },
 });

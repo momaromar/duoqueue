@@ -22,7 +22,6 @@ export function MessageBubble({ message, currentUserId, onRetry }: MessageBubble
   if (message.deliveryStatus === "failed") {
     statusLabel = message.failureReason ?? "Message failed to send";
   }
-
   return (
     <View style={[styles.row, isOwn && styles.ownRow]}>
       <View style={[styles.bubble, isOwn && styles.ownBubble, message.deliveryStatus === "failed" && styles.failedBubble]}>

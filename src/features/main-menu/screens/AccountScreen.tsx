@@ -72,7 +72,13 @@ export function AccountScreen() {
       <LobbyButton label="CHANGE PASSWORD" detail="VERIFY BY EMAIL CODE" disabled={isSigningOut} onPress={() => router.push("/settings/change-password" as Href)} />
       <View style={styles.privacyPanel}>
         <Text style={styles.privacyTitle}>PRIVACY & SAFETY</Text>
-        <Text style={styles.note}>Your authentication email is private and is not included in duo profiles, invitation previews, matchmaking profiles, or chats. Full report and block controls arrive in Phase 13.</Text>
+        <Text style={styles.note}>Your authentication email stays private. Reports preserve relevant match context for trusted review, and account-level blocks can be managed below.</Text>
+      </View>
+      <LobbyButton label="BLOCKED ACCOUNTS" detail="REVIEW OR UNBLOCK GROUPS" disabled={isSigningOut} onPress={() => router.push("/safety/blocked" as Href)} />
+      <View style={styles.menuRow}>
+        <LobbyButton label="GUIDELINES" detail="18+ COMMUNITY RULES" disabled={isSigningOut} onPress={() => router.push("/legal/community-guidelines" as Href)} />
+        <LobbyButton label="PRIVACY" detail="DATA SUMMARY" disabled={isSigningOut} onPress={() => router.push("/legal/privacy" as Href)} />
+        <LobbyButton label="TERMS" detail="MVP CONDITIONS" disabled={isSigningOut} onPress={() => router.push("/legal/terms" as Href)} />
       </View>
       {signOutError && <Text accessibilityLiveRegion="polite" style={styles.error}>{signOutError}</Text>}
       <LobbyButton label="SIGN OUT" detail="END THIS SESSION" disabled={isSigningOut} accessibilityState={{ disabled: isSigningOut, busy: isSigningOut }} onPress={() => void submitSignOut()} />

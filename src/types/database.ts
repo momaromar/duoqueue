@@ -247,9 +247,9 @@ export type Database = {
         Relationships: [];
       };
       conversations: {
-        Row: { id: string; match_id: string; created_at: string; last_message_at: string | null };
-        Insert: { id?: string; match_id: string; created_at?: string; last_message_at?: string | null };
-        Update: { last_message_at?: string | null };
+        Row: { id: string; match_id: string; created_at: string; last_message_at: string | null; status: "active" | "closed"; closed_at: string | null; closed_by_block_group_id: string | null };
+        Insert: { id?: string; match_id: string; created_at?: string; last_message_at?: string | null; status?: "active" | "closed"; closed_at?: string | null; closed_by_block_group_id?: string | null };
+        Update: { last_message_at?: string | null; status?: "active" | "closed"; closed_at?: string | null; closed_by_block_group_id?: string | null };
         Relationships: [];
       };
       conversation_members: {
@@ -321,6 +321,30 @@ export type Database = {
           product_updates_enabled?: boolean;
           updated_at?: string;
         };
+        Relationships: [];
+      };
+      safety_block_groups: {
+        Row: { id: string; blocker_user_id: string; source_match_id: string | null; blocked_duo_id: string; blocked_duo_name: string; blocked_members: Json; created_at: string; revoked_at: string | null };
+        Insert: { id?: string; blocker_user_id: string; source_match_id?: string | null; blocked_duo_id: string; blocked_duo_name: string; blocked_members: Json; created_at?: string; revoked_at?: string | null };
+        Update: { revoked_at?: string | null };
+        Relationships: [];
+      };
+      blocks: {
+        Row: { id: string; block_group_id: string; blocker_user_id: string; blocked_user_id: string; created_at: string; revoked_at: string | null };
+        Insert: { id?: string; block_group_id: string; blocker_user_id: string; blocked_user_id: string; created_at?: string; revoked_at?: string | null };
+        Update: { revoked_at?: string | null };
+        Relationships: [];
+      };
+      reports: {
+        Row: { id: string; reporter_user_id: string; subject_type: "user" | "duo" | "conversation" | "message"; subject_id: string; reason: "harassment" | "hate" | "sexual_content" | "threats_or_violence" | "spam_or_scam" | "underage_concern" | "privacy_violation" | "other"; details: string | null; status: string; evidence_snapshot: Json; created_at: string; updated_at: string };
+        Insert: { id: string; reporter_user_id: string; subject_type: "user" | "duo" | "conversation" | "message"; subject_id: string; reason: "harassment" | "hate" | "sexual_content" | "threats_or_violence" | "spam_or_scam" | "underage_concern" | "privacy_violation" | "other"; details?: string | null; status?: string; evidence_snapshot: Json; created_at?: string; updated_at?: string };
+        Update: { status?: string; updated_at?: string };
+        Relationships: [];
+      };
+      conversation_participant_history: {
+        Row: { conversation_id: string; user_id: string; joined_at: string; last_read_at: string | null; archived_at: string; archive_reason: string };
+        Insert: { conversation_id: string; user_id: string; joined_at: string; last_read_at?: string | null; archived_at?: string; archive_reason?: string };
+        Update: never;
         Relationships: [];
       };
       duo_disband_image_cleanup: {
@@ -443,6 +467,26 @@ export type Database = {
           messages_enabled: boolean;
           product_updates_enabled: boolean;
         };
+        Returns: Json;
+      };
+      get_reportable_safety_subject: {
+        Args: { subject_type: string; subject_id: string };
+        Returns: Json;
+      };
+      submit_safety_report: {
+        Args: { report_id: string; subject_type: string; subject_id: string; report_reason: string; report_details?: string | null };
+        Returns: Json;
+      };
+      block_current_opponent_duo: {
+        Args: { source_match_id: string };
+        Returns: Json;
+      };
+      get_my_blocked_duos: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
+      };
+      unblock_duo_block_group: {
+        Args: { block_group_id: string };
         Returns: Json;
       };
     };

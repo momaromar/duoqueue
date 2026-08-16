@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { StyleSheet, View } from "react-native";
 
 import { AppButton } from "@/src/components/common/AppButton";
@@ -17,9 +17,12 @@ export function WelcomeScreen() {
         <AppButton label="Create account" onPress={() => router.push("/sign-up")} />
         <AppButton label="Sign in" onPress={() => router.push("/sign-in")} />
       </View>
-      <AppText>
-        Built for friendship, not dating. Terms &amp; Privacy pages are coming soon.
-      </AppText>
+      <AppText>Built for friendship, not dating. The current MVP is for adults aged 18 or older.</AppText>
+      <View style={styles.actions}>
+        <AppButton label="Community Guidelines" onPress={() => router.push("/legal/community-guidelines" as Href)} />
+        <AppButton label="Privacy Policy" onPress={() => router.push("/legal/privacy" as Href)} />
+        <AppButton label="Terms" onPress={() => router.push("/legal/terms" as Href)} />
+      </View>
     </Screen>
   );
 }

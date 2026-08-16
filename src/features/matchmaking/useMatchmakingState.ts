@@ -18,13 +18,14 @@ export function useMatchmakingState(userId: string | undefined, enabled = true) 
   });
 }
 
-export function useMatchmakingRealtime(duoId: string | undefined, userId: string | undefined) {
+export function useMatchmakingRealtime(duoId: string | undefined, userId: string | undefined, matchId?: string) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!duoId || !userId) return;
     return subscribeToMatchmakingTicket(duoId, () => {
       void queryClient.invalidateQueries({ queryKey: matchmakingStateKey(userId) });
-    });
-  }, [duoId, queryClient, userId]);
+      void queryClient.invalidateQueries({ queryKey: ["chat"] });
+    }, matchId);
+  }, [duoId, matchId, queryClient, userId]);
 }

@@ -11,6 +11,7 @@ import {
 } from "@/src/features/matchmaking/components/MatchmakingDuoGate";
 import { MatchmakingSummary } from "@/src/features/matchmaking/components/MatchmakingSummary";
 import { OpponentDuoSummary } from "@/src/features/matchmaking/components/OpponentDuoSummary";
+import { SafetyActions } from "@/src/features/safety/components/SafetyActions";
 
 export function MatchFoundScreen() {
   return (
@@ -45,6 +46,11 @@ function MatchFoundContent({ profile, matchmaking }: MatchmakingGateData) {
         label="VIEW DUO CHAT"
         detail="CHANNEL CREATED · MESSAGING PHASE 10"
         onPress={() => router.push("/(app)/duo-chats")}
+      />
+      <SafetyActions
+        matchId={match.id}
+        opponentDuoName={match.opponent.name}
+        conversationId={match.conversationId}
       />
       <LobbyButton label="BACK TO LOBBY" onPress={() => router.replace("/(app)")} />
     </LobbyScreen>

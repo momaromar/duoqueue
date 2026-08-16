@@ -41,7 +41,19 @@ async function addOpponentImageUrls(state: MatchmakingState) {
 }
 
 async function parseState(data: unknown) {
-  return addOpponentImageUrls(matchmakingStateSchema.parse(data));
+  const state = matchmakingStateSchema.parse(data);
+  if (state.status === "matched" && !state.match) {
+    return addOpponentImageUrls({
+      ...state,
+      status: "idle",
+      ticket: null,
+      readiness: {
+        canQueue: Boolean(state.duo?.profileComplete && state.duo.memberCount === 2),
+        reason: "The previous match is closed. This duo may queue again.",
+      },
+    });
+  }
+  return addOpponentImageUrls(state);
 }
 
 export async function getMatchmakingState() {
@@ -68,10 +80,10 @@ export async function tryMatchDuo() {
   return parseState(data);
 }
 
-export function subscribeToMatchmakingTicket(duoId: string, onChange: () => void) {
+export function subscribeToMatchmakingTicket(duoId: string, onChange: () => void, matchId?: string) {
   const client = requireSupabase();
   matchmakingChannelSequence += 1;
-  const channel = client
+  const ticketChannel = client
     .channel(`matchmaking-ticket:${duoId}:${matchmakingChannelSequence}`)
     .on(
       "postgres_changes",
@@ -85,7 +97,20 @@ export function subscribeToMatchmakingTicket(duoId: string, onChange: () => void
     )
     .subscribe();
 
+  const channels = [ticketChannel];
+  if (matchId) {
+    const matchChannel = client
+      .channel(`matchmaking-match:${matchId}:${matchmakingChannelSequence}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "matches", filter: `id=eq.${matchId}` },
+        onChange,
+      )
+      .subscribe();
+    channels.push(matchChannel);
+  }
+
   return () => {
-    void client.removeChannel(channel);
+    channels.forEach((channel) => { void client.removeChannel(channel); });
   };
 }

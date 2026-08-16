@@ -1,6 +1,6 @@
 import { useIsFocused } from "@react-navigation/native";
 import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -17,10 +17,14 @@ import {
 import { useChatParticipants } from "@/src/features/chat/useChatParticipants";
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
+import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
+import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
+import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import {
   MatchmakingDuoGate,
   type MatchmakingGateData,
 } from "@/src/features/matchmaking/components/MatchmakingDuoGate";
+import { SafetyActions } from "@/src/features/safety/components/SafetyActions";
 
 export function ConversationScreen() {
   const params = useLocalSearchParams<{ conversationId?: string | string[] }>();
@@ -61,6 +65,7 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
   const { markRead } = readMutation;
   const refetchMessages = messagesQuery.refetch;
   const lastMarkedMessageId = useRef<string | null>(null);
+  const [showSafety, setShowSafety] = useState(false);
   const latestIncomingMessage = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
       const message = messages[index];
@@ -88,13 +93,27 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
     return <DuoStateErrorScreen error={messagesQuery.error} onRetry={messagesQuery.refetch} />;
   }
 
+  if (showSafety) {
+    return (
+      <LobbyScreen contentContainerStyle={styles.safetyScreen}>
+        <LobbyHeader title="Conversation Safety" subtitle={`${profile.duo.name} × ${match.opponent.name}`} />
+        <SafetyActions
+          matchId={match.id}
+          opponentDuoName={match.opponent.name}
+          conversationId={match.conversationId}
+        />
+        <LobbyButton label="BACK TO CHAT" onPress={() => setShowSafety(false)} />
+      </LobbyScreen>
+    );
+  }
+
   let keyboardBehavior: "padding" | undefined;
   if (Platform.OS === "ios") keyboardBehavior = "padding";
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.keyboard} behavior={keyboardBehavior}>
-        <ChatHeader ownDuoName={profile.duo.name} opponentDuoName={match.opponent.name} />
+        <ChatHeader ownDuoName={profile.duo.name} opponentDuoName={match.opponent.name} onOpenSafety={() => setShowSafety(true)} />
         <View style={styles.list}>
           <MessageList
             messages={messages}
@@ -119,4 +138,5 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: lobbyColors.background },
   keyboard: { flex: 1 },
   list: { flex: 1 },
+  safetyScreen: { gap: 16 },
 });
