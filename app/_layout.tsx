@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AuthProvider } from "@/src/features/auth/AuthContext";
+import { PushNotificationsProvider } from "@/src/features/notifications/PushNotificationsProvider";
 import { queryClient } from "@/src/lib/queryClient";
 
 export default function RootLayout() {
@@ -10,7 +11,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Stack screenOptions={{ headerShown: false }} />
+          <PushNotificationsProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+          </PushNotificationsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </SafeAreaProvider>

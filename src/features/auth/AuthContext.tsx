@@ -12,6 +12,7 @@ import { AppState, Platform } from "react-native";
 
 import { missingPublicEnv } from "@/src/lib/env";
 import { supabase } from "@/src/lib/supabase";
+import { disableCurrentPushInstallation } from "@/src/features/notifications/pushService";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
 type Credentials = { email: string; password: string };
@@ -207,6 +208,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { requiresEmailVerification: !data.session };
       },
       signOut: async () => {
+        await disableCurrentPushInstallation();
         const { error } = await requireSupabase().auth.signOut();
         if (error) throw error;
         setIsPasswordRecovery(false);

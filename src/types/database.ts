@@ -323,6 +323,102 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_device_installations: {
+        Row: {
+          id: string;
+          user_id: string;
+          installation_id: string;
+          expo_push_token: string;
+          platform: "android" | "ios";
+          enabled: boolean;
+          disabled_reason: string | null;
+          last_seen_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          installation_id: string;
+          expo_push_token: string;
+          platform: "android" | "ios";
+          enabled?: boolean;
+          disabled_reason?: string | null;
+          last_seen_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["push_device_installations"]["Insert"]>;
+        Relationships: [];
+      };
+      push_notification_outbox: {
+        Row: {
+          id: string;
+          recipient_user_id: string;
+          category: "duo_invitations" | "queue_status" | "matches" | "messages" | "product_updates";
+          dedupe_key: string;
+          title: string;
+          body: string;
+          data: Json;
+          status: "pending" | "processing" | "sent" | "suppressed" | "failed";
+          attempt_count: number;
+          available_at: string;
+          locked_at: string | null;
+          sent_at: string | null;
+          last_error: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient_user_id: string;
+          category: "duo_invitations" | "queue_status" | "matches" | "messages" | "product_updates";
+          dedupe_key: string;
+          title: string;
+          body: string;
+          data?: Json;
+          status?: "pending" | "processing" | "sent" | "suppressed" | "failed";
+          attempt_count?: number;
+          available_at?: string;
+          locked_at?: string | null;
+          sent_at?: string | null;
+          last_error?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["push_notification_outbox"]["Insert"]>;
+        Relationships: [];
+      };
+      push_delivery_attempts: {
+        Row: {
+          id: string;
+          outbox_id: string;
+          installation_id: string | null;
+          expo_push_token: string;
+          expo_ticket_id: string | null;
+          status: "ticketed" | "delivered" | "failed";
+          error_code: string | null;
+          error_detail: string | null;
+          receipt_checked_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          outbox_id: string;
+          installation_id?: string | null;
+          expo_push_token: string;
+          expo_ticket_id?: string | null;
+          status?: "ticketed" | "delivered" | "failed";
+          error_code?: string | null;
+          error_detail?: string | null;
+          receipt_checked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["push_delivery_attempts"]["Insert"]>;
+        Relationships: [];
+      };
       safety_block_groups: {
         Row: { id: string; blocker_user_id: string; source_match_id: string | null; blocked_duo_id: string; blocked_duo_name: string; blocked_members: Json; created_at: string; revoked_at: string | null };
         Insert: { id?: string; blocker_user_id: string; source_match_id?: string | null; blocked_duo_id: string; blocked_duo_name: string; blocked_members: Json; created_at?: string; revoked_at?: string | null };
@@ -467,6 +563,18 @@ export type Database = {
           messages_enabled: boolean;
           product_updates_enabled: boolean;
         };
+        Returns: Json;
+      };
+      register_my_push_token: {
+        Args: {
+          installation_id: string;
+          expo_push_token: string;
+          device_platform: string;
+        };
+        Returns: Json;
+      };
+      disable_my_push_installation: {
+        Args: { installation_id: string };
         Returns: Json;
       };
       get_reportable_safety_subject: {
