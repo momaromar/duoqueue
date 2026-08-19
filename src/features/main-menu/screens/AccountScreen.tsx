@@ -66,7 +66,6 @@ export function AccountScreen() {
         <Detail label="Members" value={duo?.members.map((member) => member.displayName).join(" + ") ?? "Unavailable"} />
       </View>
       <View style={styles.menuRow}>
-        <LobbyButton label="DUO" detail="MANAGE SHARED PROFILE" disabled={isSigningOut} onPress={() => router.push("/duo" as Href)} />
         <LobbyButton label="NOTIFICATIONS" detail="SAVED PREFERENCES" disabled={isSigningOut} onPress={() => router.push("/settings/notifications" as Href)} />
       </View>
       <LobbyButton label="CHANGE PASSWORD" detail="VERIFY BY EMAIL CODE" disabled={isSigningOut} onPress={() => router.push("/settings/change-password" as Href)} />
@@ -82,7 +81,6 @@ export function AccountScreen() {
       </View>
       {signOutError && <Text accessibilityLiveRegion="polite" style={styles.error}>{signOutError}</Text>}
       <LobbyButton label="SIGN OUT" detail="END THIS SESSION" disabled={isSigningOut} accessibilityState={{ disabled: isSigningOut, busy: isSigningOut }} onPress={() => void submitSignOut()} />
-      <LobbyButton label="BACK TO LOBBY" disabled={isSigningOut} onPress={() => router.back()} />
     </LobbyScreen>
   );
 }

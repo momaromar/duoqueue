@@ -76,7 +76,6 @@ function DuoBasicsForm({ duo }: { duo: ActiveDuo }) {
       <Text style={styles.note}>Changing the region updates future queue entries. An existing ticket keeps its original region snapshot.</Text>
       {actionError && <Text accessibilityLiveRegion="polite" style={styles.error}>{actionError}</Text>}
       <LobbyButton label="SAVE CHANGES" disabled={mutation.isPending} onPress={form.handleSubmit(submit)} />
-      <LobbyButton label="CANCEL" disabled={mutation.isPending} onPress={() => router.back()} />
     </LobbyScreen>
   );
 }

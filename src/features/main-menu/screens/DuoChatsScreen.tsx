@@ -68,7 +68,6 @@ export function DuoChatsScreen() {
           match={match}
         />
       )}
-      <LobbyButton label="BACK TO LOBBY" onPress={() => router.back()} />
     </LobbyScreen>
   );
 }

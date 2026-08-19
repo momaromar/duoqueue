@@ -7,16 +7,17 @@ type LobbyHeaderProps = {
   title: string;
   subtitle?: string;
   showBack?: boolean;
+  onBack?: () => void;
 };
 
-export function LobbyHeader({ title, subtitle, showBack = false }: LobbyHeaderProps) {
+export function LobbyHeader({ title, subtitle, showBack = false, onBack }: LobbyHeaderProps) {
   return (
     <View style={styles.header}>
       {showBack && (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Back to main menu"
-          onPress={() => router.back()}
+          onPress={onBack ?? (() => router.back())}
           style={({ pressed }) => [styles.back, pressed && styles.pressed]}
         >
           <Text style={styles.backText}>← MENU</Text>

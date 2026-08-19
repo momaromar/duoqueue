@@ -11,6 +11,7 @@ import { PasswordInput } from "@/src/components/common/PasswordInput";
 import { Screen } from "@/src/components/common/Screen";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { AuthScreenHeader } from "@/src/features/auth/screens/AuthScreenHeader";
+import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 import { signUpSchema, type SignUpValues } from "@/src/schemas/auth";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
@@ -142,13 +143,16 @@ export function SignUpScreen() {
 
 const styles = StyleSheet.create({
   screen: { gap: 16 },
-  form: { gap: 12 },
+  form: { gap: 12, borderWidth: 1, borderColor: lobbyColors.border, borderRadius: 16, backgroundColor: lobbyColors.surface, padding: 18 },
   agreementGroup: { gap: 4 },
   agreementRow: { flexDirection: "row", alignItems: "center", minHeight: 44, gap: 8 },
   checkbox: {
     width: 24,
     height: 24,
     borderWidth: 1,
+    borderColor: lobbyColors.cyan,
+    borderRadius: 5,
+    backgroundColor: lobbyColors.surfaceRaised,
     alignItems: "center",
     justifyContent: "center",
   },

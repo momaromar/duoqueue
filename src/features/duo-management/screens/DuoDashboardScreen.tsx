@@ -91,7 +91,6 @@ export function DuoDashboardScreen() {
         <LobbyButton label="QUEUE PREFERENCES" detail="REGION & FUTURE FILTERS" onPress={() => router.push("/duo/queue-preferences" as Href)} />
       </View>
       <LobbyButton label="MEMBERS & DISBAND" detail="MEMBERSHIP AND TEST RESET" onPress={() => router.push("/duo/members" as Href)} />
-      <LobbyButton label="BACK TO LOBBY" onPress={() => router.replace("/(app)")} />
     </LobbyScreen>
   );
 }

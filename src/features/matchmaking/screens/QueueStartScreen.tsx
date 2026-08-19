@@ -80,7 +80,6 @@ function QueueStartContent({ profile, matchmaking }: MatchmakingGateData) {
       />
       {!matchmaking.readiness.canQueue && <Text style={styles.error}>{matchmaking.readiness.reason}</Text>}
       {actionError && <Text accessibilityLiveRegion="polite" style={styles.error}>{actionError}</Text>}
-      <LobbyButton label="CANCEL" disabled={mutation.isPending} onPress={() => router.back()} />
     </LobbyScreen>
   );
 }

@@ -30,7 +30,12 @@ function MatchFoundContent({ profile, matchmaking }: MatchmakingGateData) {
 
   return (
     <LobbyScreen contentContainerStyle={styles.screen}>
-      <LobbyHeader title="Match Found" subtitle="Your server-backed duo match is ready." />
+      <LobbyHeader
+        showBack
+        title="Match Found"
+        subtitle="Your server-backed duo match is ready."
+        onBack={() => router.replace("/(app)")}
+      />
       <View style={styles.banner} accessibilityLiveRegion="polite">
         <Text style={styles.bannerCode}>MATCH CONFIRMED</Text>
         <Text style={styles.bannerTitle}>{profile.duo.name} × {match.opponent.name}</Text>
@@ -52,7 +57,6 @@ function MatchFoundContent({ profile, matchmaking }: MatchmakingGateData) {
         opponentDuoName={match.opponent.name}
         conversationId={match.conversationId}
       />
-      <LobbyButton label="BACK TO LOBBY" onPress={() => router.replace("/(app)")} />
     </LobbyScreen>
   );
 }

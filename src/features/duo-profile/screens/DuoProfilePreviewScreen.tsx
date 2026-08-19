@@ -20,6 +20,7 @@ import {
 } from "@/src/features/duo-profile/useDuoProfileState";
 import { currentDuoStateKey } from "@/src/features/duos/useCurrentDuoState";
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
+import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
 function colorStyle(colorKey: MemberColorKey) {
@@ -188,10 +189,10 @@ export function DuoProfilePreviewScreen() {
 
 const styles = StyleSheet.create({
   screen: { gap: 16 },
-  section: { gap: 10 },
-  memberCard: { gap: 6, borderWidth: 1, padding: 12 },
-  answerCard: { gap: 8, borderWidth: 1, padding: 12 },
-  memberA: { backgroundColor: "#E6F4FE" },
-  memberB: { backgroundColor: "#FFF0E6" },
-  image: { width: 160, height: 160, borderWidth: 1 },
+  section: { gap: 10, borderWidth: 1, borderColor: lobbyColors.border, borderRadius: 16, backgroundColor: lobbyColors.surface, padding: 16 },
+  memberCard: { gap: 6, borderWidth: 1, borderRadius: 12, backgroundColor: lobbyColors.surfaceRaised, padding: 12 },
+  answerCard: { gap: 8, borderWidth: 1, borderRadius: 12, backgroundColor: lobbyColors.surfaceRaised, padding: 12 },
+  memberA: { borderColor: lobbyColors.memberA },
+  memberB: { borderColor: lobbyColors.memberB },
+  image: { width: 160, height: 160, borderWidth: 1, borderColor: lobbyColors.border, borderRadius: 12 },
 });

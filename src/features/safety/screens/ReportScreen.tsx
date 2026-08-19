@@ -135,7 +135,6 @@ function ReportForm({ subject }: { subject: NonNullable<ReturnType<typeof useRep
       </Pressable>
       {error && <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>}
       <LobbyButton label="SUBMIT REPORT" disabled={mutation.isPending} onPress={() => void submit()} />
-      <LobbyButton label="CANCEL" disabled={mutation.isPending} onPress={() => router.back()} />
     </LobbyScreen>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from "react-native";
 
 import { AppText } from "@/src/components/common/AppText";
+import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
 type AppButtonProps = Omit<PressableProps, "style" | "children"> & {
   label: string;
@@ -23,10 +24,10 @@ export function AppButton({
   ...props
 }: AppButtonProps) {
   const unavailable = disabled || loading;
-  let content = <AppText>{label}</AppText>;
+  let content = <AppText style={styles.label}>{label}</AppText>;
 
   if (loading) {
-    content = <ActivityIndicator />;
+    content = <ActivityIndicator color={lobbyColors.cyan} />;
   }
 
   return (
@@ -50,13 +51,27 @@ export function AppButton({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 44,
+    minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderWidth: 2,
+    borderColor: lobbyColors.border,
+    borderRadius: 12,
+    backgroundColor: lobbyColors.surfaceRaised,
+    shadowColor: lobbyColors.cyan,
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 2,
+    paddingHorizontal: 16,
+    paddingVertical: 11,
   },
-  pressed: { opacity: 0.6 },
+  label: {
+    color: lobbyColors.text,
+    fontWeight: "800",
+    letterSpacing: 1.1,
+    textAlign: "center",
+  },
+  pressed: { opacity: 0.72, transform: [{ scale: 0.98 }] },
   disabled: { opacity: 0.5 },
 });

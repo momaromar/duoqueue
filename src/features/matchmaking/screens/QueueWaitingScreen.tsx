@@ -149,7 +149,12 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
 
   return (
     <LobbyScreen contentContainerStyle={styles.screen}>
-      <LobbyHeader title="Searching for a Duo" subtitle="Both members share this Supabase ticket." />
+      <LobbyHeader
+        showBack
+        title="Searching for a Duo"
+        subtitle="Both members share this Supabase ticket."
+        onBack={() => router.replace("/(app)")}
+      />
       <MatchmakingSummary profile={profile} />
       <View style={styles.timerPanel} accessibilityLiveRegion="polite">
         <Text style={styles.timerLabel}>{timerLabel}</Text>
@@ -181,7 +186,6 @@ function WaitingContent({ profile, matchmaking, refetchMatchmaking }: Matchmakin
           onPress={() => void cancel()}
         />
       )}
-      <LobbyButton label="BACK TO LOBBY" onPress={() => router.replace("/(app)")} />
     </LobbyScreen>
   );
 }

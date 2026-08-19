@@ -10,6 +10,7 @@ import { AppText } from "@/src/components/common/AppText";
 import { Screen } from "@/src/components/common/Screen";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { AuthScreenHeader } from "@/src/features/auth/screens/AuthScreenHeader";
+import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 import { forgotPasswordSchema, type ForgotPasswordValues } from "@/src/schemas/auth";
 import { getErrorMessage } from "@/src/utils/getErrorMessage";
 
@@ -91,6 +92,6 @@ export function ForgotPasswordScreen() {
 
 const styles = StyleSheet.create({
   screen: { gap: 16 },
-  form: { gap: 12 },
-  confirmation: { gap: 12 },
+  form: { gap: 12, borderWidth: 1, borderColor: lobbyColors.border, borderRadius: 16, backgroundColor: lobbyColors.surface, padding: 18 },
+  confirmation: { gap: 12, borderWidth: 1, borderColor: lobbyColors.green, borderRadius: 16, backgroundColor: lobbyColors.surface, padding: 18 },
 });

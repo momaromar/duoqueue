@@ -90,7 +90,6 @@ function EditForm({ state }: { state: DuoProfileState }) {
       <ContributionFields control={form.control} prompts={state.assignedPrompts} />
       {actionError && <AppText accessibilityLiveRegion="polite">{actionError}</AppText>}
       <AppButton label="Save changes" loading={mutation.isPending} onPress={() => void save()} />
-      <AppButton label="Cancel" disabled={mutation.isPending} onPress={() => router.back()} />
     </Screen>
   );
 }

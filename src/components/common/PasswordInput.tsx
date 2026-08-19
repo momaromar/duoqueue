@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 
 import { AppInput, type AppInputProps } from "@/src/components/common/AppInput";
+import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
 type PasswordInputProps = Omit<AppInputProps, "rightAccessory" | "secureTextEntry">;
 
@@ -29,7 +30,7 @@ export function PasswordInput(props: PasswordInputProps) {
           onPress={() => setVisible((current) => !current)}
           style={styles.toggle}
         >
-          <Text>{toggleLabel}</Text>
+          <Text style={styles.toggleText}>{toggleLabel}</Text>
         </Pressable>
       }
     />
@@ -44,4 +45,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 8,
   },
+  toggleText: { color: lobbyColors.cyan, fontWeight: "800" },
 });

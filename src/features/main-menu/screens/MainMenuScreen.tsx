@@ -10,7 +10,6 @@ import { useDuoProfileState } from "@/src/features/duo-profile/useDuoProfileStat
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
 import { useCurrentDuoState } from "@/src/features/duos/useCurrentDuoState";
 import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
-import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 import type { MatchmakingPresentationStatus } from "@/src/features/matchmaking/schemas";
@@ -103,10 +102,15 @@ export function MainMenuScreen() {
 
   return (
     <LobbyScreen contentContainerStyle={styles.screen}>
-      <LobbyHeader
-        title={profile.duo.name}
-        subtitle={`${profile.duo.city} · Both players connected`}
-      />
+      <View style={styles.accountAction}>
+        <LobbyButton
+          label={profile.currentMember.displayName}
+          accessibilityLabel={`Account: ${profile.currentMember.displayName}`}
+          accessibilityHint="Opens your account"
+          style={styles.accountButton}
+          onPress={() => router.push("/(app)/account")}
+        />
+      </View>
 
       <View style={styles.members} accessibilityLabel="Duo members">
         {profile.members.map((member) => (
@@ -166,11 +170,6 @@ export function MainMenuScreen() {
           detail="CONVERSATIONS"
           onPress={() => router.push("/(app)/duo-chats")}
         />
-        <LobbyButton
-          label="ACCOUNT"
-          detail="SESSION & SIGN OUT"
-          onPress={() => router.push("/(app)/account")}
-        />
       </View>
     </LobbyScreen>
   );
@@ -178,6 +177,14 @@ export function MainMenuScreen() {
 
 const styles = StyleSheet.create({
   screen: { gap: 18 },
+  accountAction: { alignItems: "flex-end" },
+  accountButton: {
+    flex: 0,
+    maxWidth: "100%",
+    minHeight: 44,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
   members: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   memberCard: {
     flex: 1,

@@ -78,7 +78,6 @@ function EditDuoForm({ duo }: { duo: EditableDuo }) {
           loading={mutation.isPending}
           onPress={form.handleSubmit(submit)}
         />
-        <AppButton label="Cancel" onPress={() => router.back()} />
       </View>
     </Screen>
   );
