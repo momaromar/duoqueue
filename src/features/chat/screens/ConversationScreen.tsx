@@ -1,5 +1,5 @@
 import { useIsFocused } from "@react-navigation/native";
-import { Redirect, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useFocusEffect, useLocalSearchParams, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -113,7 +113,15 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView style={styles.keyboard} behavior={keyboardBehavior}>
-        <ChatHeader ownDuoName={profile.duo.name} opponentDuoName={match.opponent.name} onOpenSafety={() => setShowSafety(true)} />
+        <ChatHeader
+          ownDuoName={profile.duo.name}
+          opponentDuoName={match.opponent.name}
+          onOpenSafety={() => setShowSafety(true)}
+          onOpenGamePreview={() => {
+            const gamePreviewHref = `/game/${match.conversationId}` as Href;
+            router.push(gamePreviewHref);
+          }}
+        />
         <View style={styles.list}>
           <MessageList
             messages={messages}

@@ -3,9 +3,14 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
-type ChatHeaderProps = { ownDuoName: string; opponentDuoName: string; onOpenSafety: () => void };
+type ChatHeaderProps = {
+  ownDuoName: string;
+  opponentDuoName: string;
+  onOpenSafety: () => void;
+  onOpenGamePreview?: () => void;
+};
 
-export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety }: ChatHeaderProps) {
+export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety, onOpenGamePreview }: ChatHeaderProps) {
   return (
     <View style={styles.header}>
       <Pressable
@@ -28,6 +33,16 @@ export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety }: ChatHe
       >
         <Text style={styles.profileText}>PROFILE</Text>
       </Pressable>
+      {__DEV__ && onOpenGamePreview && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Open local game development preview"
+          onPress={onOpenGamePreview}
+          style={({ pressed }) => [styles.profile, pressed && styles.pressed]}
+        >
+          <Text style={styles.gameText}>GAME PREVIEW</Text>
+        </Pressable>
+      )}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Open conversation safety actions"
@@ -49,6 +64,7 @@ const styles = StyleSheet.create({
   subtitle: { color: lobbyColors.green, fontSize: 10, fontWeight: "800", letterSpacing: 1.2, textAlign: "center" },
   profile: { minHeight: 44, justifyContent: "center" },
   profileText: { color: lobbyColors.green, fontSize: 12, fontWeight: "900", letterSpacing: 1 },
+  gameText: { color: lobbyColors.magenta, fontSize: 10, fontWeight: "900", letterSpacing: 0.8, textAlign: "center" },
   safetyText: { color: lobbyColors.danger, fontSize: 12, fontWeight: "900", letterSpacing: 1 },
   pressed: { opacity: 0.6 },
 });
