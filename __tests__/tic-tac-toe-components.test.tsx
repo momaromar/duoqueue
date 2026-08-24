@@ -41,7 +41,7 @@ describe("Tic-Tac-Toe setup", () => {
     expect(view.getByLabelText("Large 10 × 10")).toBeTruthy();
     await fireEvent.press(view.getByLabelText("Large 10 × 10"));
     await fireEvent.press(view.getByLabelText("Devon, Pixel Pair"));
-    await fireEvent.press(view.getByLabelText("Create local invitation"));
+    await fireEvent.press(view.getByLabelText("Send game invitation"));
     expect(selectPreset).toHaveBeenCalledWith("large");
     expect(selectOpponent).toHaveBeenCalledWith(participants[3].userId);
     expect(createInvitation).toHaveBeenCalledTimes(1);

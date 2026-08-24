@@ -292,6 +292,98 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      game_sessions: {
+        Row: {
+          id: string;
+          conversation_id: string;
+          game_type: "tic_tac_toe";
+          preset_key: "classic" | "quick" | "extended" | "large";
+          board_size: number;
+          win_length: number;
+          status: "pending" | "active" | "won" | "draw" | "resigned" | "declined" | "cancelled" | "closed";
+          challenger_user_id: string;
+          invited_user_id: string;
+          next_turn_user_id: string | null;
+          winner_user_id: string | null;
+          state_version: number;
+          winning_line: Json;
+          previous_game_id: string | null;
+          invited_at: string;
+          started_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          conversation_id: string;
+          game_type?: "tic_tac_toe";
+          preset_key: "classic" | "quick" | "extended" | "large";
+          board_size: number;
+          win_length: number;
+          status?: "pending" | "active" | "won" | "draw" | "resigned" | "declined" | "cancelled" | "closed";
+          challenger_user_id: string;
+          invited_user_id: string;
+          next_turn_user_id?: string | null;
+          winner_user_id?: string | null;
+          state_version?: number;
+          winning_line?: Json;
+          previous_game_id?: string | null;
+          invited_at?: string;
+          started_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["game_sessions"]["Insert"]>;
+        Relationships: [];
+      };
+      game_players: {
+        Row: {
+          game_id: string;
+          user_id: string;
+          mark: "X" | "O";
+          player_order: 1 | 2;
+          accepted_at: string;
+          resigned_at: string | null;
+        };
+        Insert: {
+          game_id: string;
+          user_id: string;
+          mark: "X" | "O";
+          player_order: 1 | 2;
+          accepted_at?: string;
+          resigned_at?: string | null;
+        };
+        Update: { resigned_at?: string | null };
+        Relationships: [];
+      };
+      game_moves: {
+        Row: {
+          id: string;
+          game_id: string;
+          user_id: string;
+          move_number: number;
+          row_index: number;
+          column_index: number;
+          mark: "X" | "O";
+          resulting_state_version: number;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          game_id: string;
+          user_id: string;
+          move_number: number;
+          row_index: number;
+          column_index: number;
+          mark: "X" | "O";
+          resulting_state_version: number;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
       notification_preferences: {
         Row: {
           user_id: string;
@@ -595,6 +687,31 @@ export type Database = {
       };
       unblock_duo_block_group: {
         Args: { block_group_id: string };
+        Returns: Json;
+      };
+      get_conversation_game: {
+        Args: { conversation_id: string };
+        Returns: Json;
+      };
+      create_game_invitation: {
+        Args: {
+          conversation_id: string;
+          client_game_id: string;
+          preset_key: "classic" | "quick" | "extended" | "large";
+          invited_user_id: string;
+        };
+        Returns: Json;
+      };
+      accept_game_invitation: {
+        Args: { game_id: string; expected_state_version: number };
+        Returns: Json;
+      };
+      decline_game_invitation: {
+        Args: { game_id: string; expected_state_version: number };
+        Returns: Json;
+      };
+      cancel_game_invitation: {
+        Args: { game_id: string; expected_state_version: number };
         Returns: Json;
       };
     };

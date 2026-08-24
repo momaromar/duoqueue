@@ -11,6 +11,7 @@ type GameSetupPanelProps = {
   onSelectPreset: (preset: GamePresetKey) => void;
   onSelectOpponent: (userId: string) => void;
   onCreateInvitation: () => void;
+  isCreating?: boolean;
 };
 
 export function GameSetupPanel({
@@ -20,10 +21,13 @@ export function GameSetupPanel({
   onSelectPreset,
   onSelectOpponent,
   onCreateInvitation,
+  isCreating = false,
 }: GameSetupPanelProps) {
+  let submitLabel = "SEND INVITATION";
+  if (isCreating) submitLabel = "SENDING…";
   return (
     <View style={styles.panel}>
-      <Text accessibilityRole="header" style={styles.title}>Start a local game</Text>
+      <Text accessibilityRole="header" style={styles.title}>Start a game</Text>
       <Text style={styles.description}>Choose a fixed preset and one of the other conversation members.</Text>
       <Text style={styles.label}>PRESET</Text>
       <View style={styles.choiceGrid} accessibilityRole="radiogroup">
@@ -64,11 +68,13 @@ export function GameSetupPanel({
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Create local invitation"
+        accessibilityLabel="Send game invitation"
+        accessibilityState={{ disabled: isCreating }}
+        disabled={isCreating}
         onPress={onCreateInvitation}
-        style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.primary, isCreating && styles.disabled, pressed && styles.pressed]}
       >
-        <Text style={styles.primaryText}>CREATE LOCAL INVITE</Text>
+        <Text style={styles.primaryText}>{submitLabel}</Text>
       </Pressable>
     </View>
   );
@@ -113,4 +119,5 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: lobbyColors.cyan, fontWeight: "900", letterSpacing: 1.4 },
   pressed: { opacity: 0.62 },
+  disabled: { opacity: 0.45 },
 });

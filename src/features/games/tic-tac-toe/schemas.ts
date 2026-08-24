@@ -65,3 +65,17 @@ export const gameSnapshotSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
 });
+
+export const conversationGameSchema = z.object({
+  game: gameSnapshotSchema.nullable(),
+  callerRole: gameCallerRoleSchema.nullable(),
+}).superRefine((value, context) => {
+  if (value.game && !value.callerRole) {
+    context.addIssue({ code: "custom", message: "A game requires the caller's role." });
+  }
+  if (!value.game && value.callerRole) {
+    context.addIssue({ code: "custom", message: "A caller role requires a game." });
+  }
+});
+
+export type ConversationGame = z.infer<typeof conversationGameSchema>;

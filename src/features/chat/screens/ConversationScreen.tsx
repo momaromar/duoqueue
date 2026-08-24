@@ -117,9 +117,9 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
           ownDuoName={profile.duo.name}
           opponentDuoName={match.opponent.name}
           onOpenSafety={() => setShowSafety(true)}
-          onOpenGamePreview={() => {
-            const gamePreviewHref = `/game/${match.conversationId}` as Href;
-            router.push(gamePreviewHref);
+          onOpenGame={() => {
+            const gameHref = `/game/${match.conversationId}` as Href;
+            router.push(gameHref);
           }}
         />
         <View style={styles.list}>

@@ -157,8 +157,8 @@ export function getCallerRole(snapshot: GameSnapshot, userId: string): GameCalle
   const player = snapshot.players.find((item) => item.userId === userId);
   if (player?.mark === "X") return "player_x";
   if (player?.mark === "O") return "player_o";
-  if (snapshot.status === "pending" && snapshot.challenger.userId === userId) return "challenger";
-  if (snapshot.status === "pending" && snapshot.invited.userId === userId) return "invited";
+  if (snapshot.challenger.userId === userId) return "challenger";
+  if (snapshot.invited.userId === userId) return "invited";
   return "spectator";
 }
 

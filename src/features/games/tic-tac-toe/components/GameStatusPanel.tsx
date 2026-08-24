@@ -2,13 +2,15 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { getCallerRole } from "@/src/features/games/tic-tac-toe/fixtures";
 import { getGamePreset } from "@/src/features/games/tic-tac-toe/presets";
-import type { GameSnapshot } from "@/src/features/games/tic-tac-toe/types";
+import type { GameCallerRole, GameSnapshot } from "@/src/features/games/tic-tac-toe/types";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
 type GameStatusPanelProps = {
   snapshot: GameSnapshot;
   viewerUserId: string;
   localHotSeat: boolean;
+  callerRole?: GameCallerRole;
+  actionsDisabled?: boolean;
   onAccept?: () => void;
   onDecline?: () => void;
   onCancel?: () => void;
@@ -17,22 +19,29 @@ type GameStatusPanelProps = {
   onReturnToSetup?: () => void;
 };
 
-function ActionButton({ label, danger, onPress }: { label: string; danger?: boolean; onPress: () => void }) {
+function ActionButton({ label, danger, disabled, onPress }: { label: string; danger?: boolean; disabled?: boolean; onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={label}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.action, danger && styles.dangerAction, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.action, danger && styles.dangerAction, disabled && styles.disabled, pressed && styles.pressed]}
     >
       <Text style={[styles.actionText, danger && styles.dangerText]}>{label}</Text>
     </Pressable>
   );
 }
 
-export function getGameStatusCopy(snapshot: GameSnapshot, viewerUserId: string, localHotSeat: boolean) {
+export function getGameStatusCopy(
+  snapshot: GameSnapshot,
+  viewerUserId: string,
+  localHotSeat: boolean,
+  callerRole?: GameCallerRole,
+) {
   const preset = getGamePreset(snapshot.presetKey);
-  const role = getCallerRole(snapshot, viewerUserId);
+  const role = callerRole ?? getCallerRole(snapshot, viewerUserId);
   const nextPlayer = snapshot.players.find((player) => player.userId === snapshot.nextTurnUserId);
   const winner = snapshot.players.find((player) => player.userId === snapshot.winnerUserId);
   let title = preset.label;
@@ -79,6 +88,8 @@ export function GameStatusPanel({
   snapshot,
   viewerUserId,
   localHotSeat,
+  callerRole,
+  actionsDisabled = false,
   onAccept,
   onDecline,
   onCancel,
@@ -86,19 +97,19 @@ export function GameStatusPanel({
   onRematch,
   onReturnToSetup,
 }: GameStatusPanelProps) {
-  const copy = getGameStatusCopy(snapshot, viewerUserId, localHotSeat);
+  const copy = getGameStatusCopy(snapshot, viewerUserId, localHotSeat, callerRole);
   return (
     <View style={styles.panel} accessibilityLiveRegion="polite">
       <Text accessibilityRole="header" style={styles.title}>{copy.title}</Text>
       <Text style={styles.detail}>{copy.detail}</Text>
       <Text style={styles.role}>VIEWER ROLE: {copy.role.replace("_", " ").toUpperCase()}</Text>
       <View style={styles.actions}>
-        {onAccept && <ActionButton label="ACCEPT LOCAL INVITE" onPress={onAccept} />}
-        {onDecline && <ActionButton label="DECLINE" danger onPress={onDecline} />}
-        {onCancel && <ActionButton label="CANCEL INVITE" danger onPress={onCancel} />}
-        {onResign && <ActionButton label="RESIGN LOCAL GAME" danger onPress={onResign} />}
-        {onRematch && <ActionButton label="REQUEST REMATCH" onPress={onRematch} />}
-        {onReturnToSetup && <ActionButton label="RETURN TO SETUP" onPress={onReturnToSetup} />}
+        {onAccept && <ActionButton label="ACCEPT INVITE" disabled={actionsDisabled} onPress={onAccept} />}
+        {onDecline && <ActionButton label="DECLINE" danger disabled={actionsDisabled} onPress={onDecline} />}
+        {onCancel && <ActionButton label="CANCEL INVITE" danger disabled={actionsDisabled} onPress={onCancel} />}
+        {onResign && <ActionButton label="RESIGN LOCAL GAME" danger disabled={actionsDisabled} onPress={onResign} />}
+        {onRematch && <ActionButton label="REQUEST REMATCH" disabled={actionsDisabled} onPress={onRematch} />}
+        {onReturnToSetup && <ActionButton label="RETURN TO SETUP" disabled={actionsDisabled} onPress={onReturnToSetup} />}
       </View>
     </View>
   );
@@ -130,4 +141,5 @@ const styles = StyleSheet.create({
   actionText: { color: lobbyColors.cyan, fontSize: 11, fontWeight: "900", letterSpacing: 0.8 },
   dangerText: { color: lobbyColors.danger },
   pressed: { opacity: 0.62 },
+  disabled: { opacity: 0.45 },
 });

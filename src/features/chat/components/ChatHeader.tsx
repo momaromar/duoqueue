@@ -7,10 +7,10 @@ type ChatHeaderProps = {
   ownDuoName: string;
   opponentDuoName: string;
   onOpenSafety: () => void;
-  onOpenGamePreview?: () => void;
+  onOpenGame: () => void;
 };
 
-export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety, onOpenGamePreview }: ChatHeaderProps) {
+export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety, onOpenGame }: ChatHeaderProps) {
   return (
     <View style={styles.header}>
       <Pressable
@@ -33,16 +33,14 @@ export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety, onOpenGa
       >
         <Text style={styles.profileText}>PROFILE</Text>
       </Pressable>
-      {__DEV__ && onOpenGamePreview && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open local game development preview"
-          onPress={onOpenGamePreview}
-          style={({ pressed }) => [styles.profile, pressed && styles.pressed]}
-        >
-          <Text style={styles.gameText}>GAME PREVIEW</Text>
-        </Pressable>
-      )}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Play Tic-Tac-Toe"
+        onPress={onOpenGame}
+        style={({ pressed }) => [styles.profile, pressed && styles.pressed]}
+      >
+        <Text style={styles.gameText}>PLAY</Text>
+      </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Open conversation safety actions"
