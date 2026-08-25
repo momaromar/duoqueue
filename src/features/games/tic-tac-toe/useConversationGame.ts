@@ -8,9 +8,11 @@ import { chatMessagesKey, chatSummaryKey } from "@/src/features/chat/useChat";
 import {
   acceptGameInvitation,
   cancelGameInvitation,
+  createGameRematch,
   createGameInvitation,
   declineGameInvitation,
   getConversationGame,
+  resignGame,
   submitGameMove,
   subscribeToConversationGame,
 } from "@/src/features/games/tic-tac-toe/gameService";
@@ -201,4 +203,36 @@ export function useSubmitGameMove(
   }
 
   return { ...mutation, submit, optimisticMove };
+}
+
+export function useGameLifecycleActions(
+  userId: string | undefined,
+  conversationId: string | undefined,
+) {
+  const queryClient = useQueryClient();
+  const onSuccess = async (result: ConversationGame) => {
+    replaceConversationGameCache(queryClient, userId, conversationId, result);
+    await invalidateRelatedQueries(queryClient, userId, conversationId);
+  };
+  const onError = () => {
+    void queryClient.invalidateQueries({ queryKey: conversationGameKey(userId, conversationId) });
+  };
+  const resign = useMutation({
+    mutationFn: ({ gameId, expectedStateVersion }: TransitionVariables) => resignGame(
+      gameId,
+      expectedStateVersion,
+    ),
+    onSuccess,
+    onError,
+  });
+  const rematch = useMutation({
+    mutationFn: ({ gameId, expectedStateVersion }: TransitionVariables) => createGameRematch(
+      gameId,
+      Crypto.randomUUID(),
+      expectedStateVersion,
+    ),
+    onSuccess,
+    onError,
+  });
+  return { resign, rematch };
 }

@@ -724,6 +724,18 @@ export type Database = {
         };
         Returns: Json;
       };
+      resign_game: {
+        Args: { game_id: string; expected_state_version: number };
+        Returns: Json;
+      };
+      create_game_rematch: {
+        Args: {
+          previous_game_id: string;
+          client_game_id: string;
+          expected_state_version: number;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       duo_status: "forming" | "active";

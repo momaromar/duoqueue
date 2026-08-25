@@ -58,6 +58,8 @@ describe("authoritative invitation responses", () => {
     expect(getGameErrorMessage(new Error("GAME_CELL_OCCUPIED"))).toContain("already occupied");
     expect(getGameErrorMessage(new Error("GAME_MOVE_OUT_OF_RANGE"))).toContain("outside");
     expect(getGameErrorMessage(new Error("function public.submit_game_move does not exist"))).toContain("Milestone 3");
+    expect(getGameErrorMessage(new Error("function public.resign_game does not exist"))).toContain("Milestone 4");
+    expect(getGameErrorMessage(new Error("GAME_REMATCH_NOT_ALLOWED"))).toContain("not eligible");
   });
 });
 
@@ -132,5 +134,32 @@ describe("authoritative invitation controls", () => {
     const view = await render(<GameBoard snapshot={fixture.snapshot} viewerUserId={userId} />);
     expect(view.getAllByText("WIN")).toHaveLength(3);
     expect(view.getAllByRole("button").every((cell) => cell.props.accessibilityState.disabled)).toBe(true);
+  });
+
+  it("shows resignation only when supplied for an assigned active player", async () => {
+    const accepted = responseFor("active_player_turn");
+    const resign = jest.fn();
+    const playerView = await render(
+      <GameStatusPanel
+        snapshot={accepted.game!}
+        viewerUserId={userId}
+        callerRole="player_x"
+        localHotSeat={false}
+        onResign={resign}
+      />,
+    );
+    await fireEvent.press(playerView.getByLabelText("RESIGN GAME"));
+    expect(resign).toHaveBeenCalledTimes(1);
+    await cleanup();
+
+    const spectatorView = await render(
+      <GameStatusPanel
+        snapshot={accepted.game!}
+        viewerUserId={participants[1].userId}
+        callerRole="spectator"
+        localHotSeat={false}
+      />,
+    );
+    expect(spectatorView.queryByLabelText("RESIGN GAME")).toBeNull();
   });
 });

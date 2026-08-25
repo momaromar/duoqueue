@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render } from "@testing-library/react-native";
 
 import { GameBoard } from "@/src/features/games/tic-tac-toe/components/GameBoard";
+import { GameResignationConfirmation } from "@/src/features/games/tic-tac-toe/components/GameResignationConfirmation";
 import { GameSetupPanel } from "@/src/features/games/tic-tac-toe/components/GameSetupPanel";
 import { GameStatusPanel } from "@/src/features/games/tic-tac-toe/components/GameStatusPanel";
 import { createFixtureState } from "@/src/features/games/tic-tac-toe/fixtures";
@@ -128,5 +129,41 @@ describe("Tic-Tac-Toe game states", () => {
     );
     expect(view.getByText("PENDING")).toBeTruthy();
     expect(view.getByLabelText("Row 2, column 2, occupied by O")).toBeTruthy();
+  });
+
+  it("requires explicit confirmation before resignation", async () => {
+    const confirm = jest.fn();
+    const cancel = jest.fn();
+    const view = await render(
+      <GameResignationConfirmation opponentName="Casey" onConfirm={confirm} onCancel={cancel} />,
+    );
+    expect(view.getByText("Casey will immediately win. Accepted moves remain in the game record.")).toBeTruthy();
+    await fireEvent.press(view.getByLabelText("CONFIRM RESIGNATION"));
+    await fireEvent.press(view.getByLabelText("KEEP PLAYING"));
+    expect(confirm).toHaveBeenCalledTimes(1);
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a resigned board read-only while exposing rematch only when supplied", async () => {
+    const fixture = createFixtureState("resigned", conversationId, "classic", participants);
+    if (!fixture.snapshot) throw new Error("Expected a resigned fixture.");
+    const rematch = jest.fn();
+    const statusView = await render(
+      <GameStatusPanel
+        snapshot={fixture.snapshot}
+        viewerUserId={fixture.viewerUserId}
+        callerRole="player_o"
+        localHotSeat={false}
+        onRematch={rematch}
+      />,
+    );
+    await fireEvent.press(statusView.getByLabelText("REQUEST REMATCH"));
+    expect(rematch).toHaveBeenCalledTimes(1);
+    await cleanup();
+
+    const boardView = await render(
+      <GameBoard snapshot={fixture.snapshot} viewerUserId={fixture.viewerUserId} />,
+    );
+    expect(boardView.getAllByRole("button").every((cell) => cell.props.accessibilityState.disabled)).toBe(true);
   });
 });

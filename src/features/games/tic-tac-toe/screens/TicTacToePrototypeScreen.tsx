@@ -7,6 +7,7 @@ import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { useChatParticipants } from "@/src/features/chat/useChatParticipants";
 import { GameBoard } from "@/src/features/games/tic-tac-toe/components/GameBoard";
+import { GameResignationConfirmation } from "@/src/features/games/tic-tac-toe/components/GameResignationConfirmation";
 import { GameSetupPanel } from "@/src/features/games/tic-tac-toe/components/GameSetupPanel";
 import { GameStatusPanel, getGameStatusCopy } from "@/src/features/games/tic-tac-toe/components/GameStatusPanel";
 import { getGameErrorMessage } from "@/src/features/games/tic-tac-toe/gameService";
@@ -15,6 +16,7 @@ import {
   useConversationGame,
   useConversationGameRealtime,
   useGameInvitationActions,
+  useGameLifecycleActions,
   useSubmitGameMove,
 } from "@/src/features/games/tic-tac-toe/useConversationGame";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
@@ -66,8 +68,10 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   const [selectedOpponentId, setSelectedOpponentId] = useState(match.opponent.members[0]?.userId ?? "");
   const [dismissedGameId, setDismissedGameId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [confirmingResignation, setConfirmingResignation] = useState(false);
   const gameQuery = useConversationGame(currentUserId, match.conversationId);
   const actions = useGameInvitationActions(currentUserId, match.conversationId);
+  const lifecycle = useGameLifecycleActions(currentUserId, match.conversationId);
   const move = useSubmitGameMove(currentUserId, match.conversationId);
   useConversationGameRealtime(
     currentUserId,
@@ -88,6 +92,8 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
     || actions.accept.isPending
     || actions.decline.isPending
     || actions.cancel.isPending
+    || lifecycle.resign.isPending
+    || lifecycle.rematch.isPending
     || move.isPending;
 
   useEffect(() => {
@@ -97,6 +103,7 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   }, [callerRole, currentUserId, snapshot]);
 
   useEffect(() => {
+    setConfirmingResignation(false);
     if (snapshot?.status === "pending" || snapshot?.status === "active") {
       setDismissedGameId(null);
     }
@@ -121,6 +128,8 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
     ?? actions.accept.error
     ?? actions.decline.error
     ?? actions.cancel.error
+    ?? lifecycle.resign.error
+    ?? lifecycle.rematch.error
     ?? move.error;
   let visibleError = actionError;
   if (!visibleError && mutationError) visibleError = getGameErrorMessage(mutationError);
@@ -141,6 +150,20 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
     returnToSetupAction = () => setDismissedGameId(snapshot.id);
   }
   const currentPlayer = snapshot?.players.find((player) => player.userId === currentUserId);
+  const opponentPlayer = snapshot?.players.find((player) => player.userId !== currentUserId);
+  let resignAction: (() => void) | undefined;
+  if (transition && snapshot?.status === "active" && currentPlayer) {
+    resignAction = () => setConfirmingResignation(true);
+  }
+  let rematchAction: (() => void) | undefined;
+  if (
+    transition
+    && currentPlayer
+    && snapshot
+    && ["won", "draw", "resigned"].includes(snapshot.status)
+  ) {
+    rematchAction = () => runAction(() => lifecycle.rematch.mutate(transition));
+  }
   let playMove: ((row: number, column: number) => void) | undefined;
   if (
     snapshot?.status === "active"
@@ -201,12 +224,22 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
             onAccept={acceptAction}
             onDecline={declineAction}
             onCancel={cancelAction}
+            onResign={resignAction}
+            onRematch={rematchAction}
             onReturnToSetup={returnToSetupAction}
           />
+          {confirmingResignation && transition && opponentPlayer && (
+            <GameResignationConfirmation
+              opponentName={opponentPlayer.displayName}
+              disabled={lifecycle.resign.isPending}
+              onConfirm={() => runAction(() => lifecycle.resign.mutate(transition))}
+              onCancel={() => setConfirmingResignation(false)}
+            />
+          )}
           {snapshot.status === "pending" && callerRole === "spectator" && (
             <Notice text="You can watch this invitation, but only the invited player may respond." />
           )}
-          {["active", "won", "draw"].includes(snapshot.status) && (
+          {["active", "won", "draw", "resigned"].includes(snapshot.status) && (
             <GameBoard
               snapshot={snapshot}
               viewerUserId={currentUserId}
@@ -229,7 +262,10 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
               actions.accept.reset();
               actions.decline.reset();
               actions.cancel.reset();
+              lifecycle.resign.reset();
+              lifecycle.rematch.reset();
               move.reset();
+              setConfirmingResignation(false);
               void gameQuery.refetch();
             }}
             style={({ pressed }) => [styles.retry, pressed && styles.pressed]}

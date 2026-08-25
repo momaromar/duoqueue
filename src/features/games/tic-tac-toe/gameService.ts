@@ -83,6 +83,29 @@ export async function submitGameMove(
   return parseGame(data);
 }
 
+export async function resignGame(gameId: string, expectedStateVersion: number) {
+  const { data, error } = await requireSupabase().rpc("resign_game", {
+    game_id: gameId,
+    expected_state_version: expectedStateVersion,
+  });
+  if (error) throw error;
+  return parseGame(data);
+}
+
+export async function createGameRematch(
+  previousGameId: string,
+  gameId: string,
+  expectedStateVersion: number,
+) {
+  const { data, error } = await requireSupabase().rpc("create_game_rematch", {
+    previous_game_id: previousGameId,
+    client_game_id: gameId,
+    expected_state_version: expectedStateVersion,
+  });
+  if (error) throw error;
+  return parseGame(data);
+}
+
 export function subscribeToConversationGame(
   conversationId: string,
   gameId: string | undefined,
@@ -154,11 +177,20 @@ export function getGameErrorMessage(error: unknown) {
   if (/GAME_MOVE_IDEMPOTENCY_MISMATCH/i.test(raw)) {
     return "That move retry did not match the original move. The board has been refreshed.";
   }
+  if (/GAME_REMATCH_NOT_ALLOWED|GAME_REMATCH_PLAYERS_INVALID/i.test(raw)) {
+    return "This game is not eligible for a rematch.";
+  }
+  if (/GAME_RESIGN_NOT_ALLOWED/i.test(raw)) {
+    return "This game can no longer be resigned.";
+  }
   if (/column reference .* is ambiguous/i.test(raw)) {
     return "The invitation RPC needs the Milestone 2 repair migration. Apply 202608240002, then refresh.";
   }
   if (/submit_game_move.*does not exist|could not find.*submit_game_move/i.test(raw)) {
     return "Authoritative moves are not configured yet. Apply the Milestone 3 migration, then refresh.";
+  }
+  if (/resign_game.*does not exist|create_game_rematch.*does not exist|could not find.*(resign_game|create_game_rematch)/i.test(raw)) {
+    return "Game lifecycle actions are not configured yet. Apply the Milestone 4 migration, then refresh.";
   }
   if (/function .* does not exist|schema cache|game_sessions.*does not exist/i.test(raw)) {
     return "Tic-Tac-Toe invitations are not configured yet. Apply the Milestone 2 Supabase migration, then retry.";

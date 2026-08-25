@@ -67,7 +67,7 @@ export function getGameStatusCopy(
   }
   if (snapshot.status === "resigned") {
     title = `${winner?.displayName ?? "The remaining player"} won by resignation`;
-    detail = "The other player resigned from this local preview game.";
+    detail = "The other player resigned, ending the game.";
   }
   if (snapshot.status === "declined") {
     title = "Invitation declined";
@@ -107,7 +107,7 @@ export function GameStatusPanel({
         {onAccept && <ActionButton label="ACCEPT INVITE" disabled={actionsDisabled} onPress={onAccept} />}
         {onDecline && <ActionButton label="DECLINE" danger disabled={actionsDisabled} onPress={onDecline} />}
         {onCancel && <ActionButton label="CANCEL INVITE" danger disabled={actionsDisabled} onPress={onCancel} />}
-        {onResign && <ActionButton label="RESIGN LOCAL GAME" danger disabled={actionsDisabled} onPress={onResign} />}
+        {onResign && <ActionButton label="RESIGN GAME" danger disabled={actionsDisabled} onPress={onResign} />}
         {onRematch && <ActionButton label="REQUEST REMATCH" disabled={actionsDisabled} onPress={onRematch} />}
         {onReturnToSetup && <ActionButton label="RETURN TO SETUP" disabled={actionsDisabled} onPress={onReturnToSetup} />}
       </View>
