@@ -16,7 +16,7 @@ import {
   getGameErrorMessage,
   isGameConversationUnavailableError,
 } from "@/src/features/games/tic-tac-toe/gameService";
-import type { GameParticipant, GamePresetKey } from "@/src/features/games/tic-tac-toe/types";
+import type { GamePresetKey } from "@/src/features/games/tic-tac-toe/types";
 import {
   useConversationGame,
   useConversationGameRealtime,
@@ -77,13 +77,8 @@ export function shouldShowGameSetup(gameId: string | null, dismissedGameId: stri
 
 function AuthoritativeGame({ profile, match, currentUserId, refetchMatchmaking }: AuthoritativeGameProps) {
   const isFocused = useIsFocused();
-  const { participants: chatParticipants, currentParticipant } = useChatParticipants(currentUserId, profile, match);
-  const participants: GameParticipant[] = useMemo(
-    () => chatParticipants.map(({ userId, displayName, duoId, duoName }) => ({ userId, displayName, duoId, duoName })),
-    [chatParticipants],
-  );
+  const { participants, currentParticipant } = useChatParticipants(currentUserId, profile, match);
   const [selectedPreset, setSelectedPreset] = useState<GamePresetKey>("classic");
-  const [selectedOpponentId, setSelectedOpponentId] = useState(match.opponent.members[0]?.userId ?? "");
   const [dismissedGameId, setDismissedGameId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingResignation, setConfirmingResignation] = useState(false);
@@ -180,8 +175,6 @@ function AuthoritativeGame({ profile, match, currentUserId, refetchMatchmaking }
   }
   if (gameQuery.isPending) return <LoadingView label="Loading Tic-Tac-Toe…" />;
 
-  const opponents = participants.filter((participant) => participant.userId !== currentUserId);
-
   const runAction = (action: () => void) => {
     setActionError(null);
     focusBaseline.current = snapshotKey;
@@ -194,8 +187,14 @@ function AuthoritativeGame({ profile, match, currentUserId, refetchMatchmaking }
   let acceptAction: (() => void) | undefined;
   let declineAction: (() => void) | undefined;
   let cancelAction: (() => void) | undefined;
-  if (transition && snapshot?.status === "pending" && callerRole === "invited") {
+  if (
+    transition
+    && snapshot?.status === "pending"
+    && (callerRole === "invited" || callerRole === "eligible")
+  ) {
     acceptAction = () => runAction(() => actions.accept.mutate(transition));
+  }
+  if (transition && snapshot?.status === "pending" && callerRole === "invited") {
     declineAction = () => runAction(() => actions.decline.mutate(transition));
   }
   if (transition && snapshot?.status === "pending" && callerRole === "challenger") {
@@ -221,7 +220,12 @@ function AuthoritativeGame({ profile, match, currentUserId, refetchMatchmaking }
     && snapshot
     && ["won", "draw", "resigned"].includes(snapshot.status)
   ) {
-    rematchAction = () => runAction(() => lifecycle.rematch.mutate(transition));
+    rematchAction = () => {
+      setActionError(null);
+      lifecycle.rematch.mutate(transition, {
+        onSuccess: () => router.replace(`/chat/${match.conversationId}`),
+      });
+    };
   }
   let playMove: ((row: number, column: number) => void) | undefined;
   if (
@@ -266,20 +270,15 @@ function AuthoritativeGame({ profile, match, currentUserId, refetchMatchmaking }
         <GameSetupPanel
           focusRef={setupFocusRef}
           selectedPreset={selectedPreset}
-          selectedOpponentId={selectedOpponentId}
-          opponents={opponents}
           onSelectPreset={setSelectedPreset}
-          onSelectOpponent={setSelectedOpponentId}
           isCreating={actions.create.isPending}
           actionsDisabled={actionPending}
           onCreateInvitation={() => {
-            if (!selectedOpponentId) {
-              setActionError("Choose another conversation member first.");
-              focusBaseline.current = snapshotKey;
-              setFocusRequest("status");
-              return;
-            }
-            runAction(() => actions.create.mutate({ presetKey: selectedPreset, invitedUserId: selectedOpponentId }));
+            setActionError(null);
+            actions.create.mutate(
+              { presetKey: selectedPreset },
+              { onSuccess: () => router.replace(`/chat/${match.conversationId}`) },
+            );
           }}
         />
       )}
@@ -309,7 +308,7 @@ function AuthoritativeGame({ profile, match, currentUserId, refetchMatchmaking }
             />
           )}
           {snapshot.status === "pending" && callerRole === "spectator" && (
-            <Notice text="You can watch this invitation, but only the invited player may respond." />
+            <Notice text="This invitation belongs to your duo. Only someone from the other duo can join it." />
           )}
           {["active", "won", "draw", "resigned"].includes(snapshot.status) && (
             <GameBoard

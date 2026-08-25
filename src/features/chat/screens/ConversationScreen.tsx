@@ -9,6 +9,7 @@ import { useAuth } from "@/src/features/auth/AuthContext";
 import { ChatHeader } from "@/src/features/chat/components/ChatHeader";
 import { MessageComposer } from "@/src/features/chat/components/MessageComposer";
 import { MessageList } from "@/src/features/chat/components/MessageList";
+import type { SystemMessageAction } from "@/src/features/chat/components/SystemMessage";
 import {
   useConversationMessages,
   useConversationRealtime,
@@ -16,6 +17,12 @@ import {
 } from "@/src/features/chat/useChat";
 import { useChatParticipants } from "@/src/features/chat/useChatParticipants";
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
+import { getGameErrorMessage } from "@/src/features/games/tic-tac-toe/gameService";
+import {
+  useConversationGame,
+  useConversationGameRealtime,
+  useGameInvitationActions,
+} from "@/src/features/games/tic-tac-toe/useConversationGame";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
@@ -62,9 +69,18 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
     participants,
   );
   const readMutation = useMarkConversationRead(user?.id, match.conversationId);
+  const gameQuery = useConversationGame(user?.id, match.conversationId);
+  const gameActions = useGameInvitationActions(user?.id, match.conversationId);
+  useConversationGameRealtime(
+    user?.id,
+    match.conversationId,
+    gameQuery.data?.game?.id,
+    isFocused,
+  );
   const { markRead } = readMutation;
   const refetchMessages = messagesQuery.refetch;
   const lastMarkedMessageId = useRef<string | null>(null);
+  const postedInvitationGameId = useRef<string | null>(null);
   const [showSafety, setShowSafety] = useState(false);
   const latestIncomingMessage = useMemo(() => {
     for (let index = messages.length - 1; index >= 0; index -= 1) {
@@ -86,6 +102,65 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
     lastMarkedMessageId.current = latestIncomingMessage.id;
     markRead();
   }, [isFocused, latestIncomingMessage, markRead]);
+
+  let pendingGame = null;
+  if (gameQuery.data?.game?.status === "pending") pendingGame = gameQuery.data.game;
+  const callerRole = gameQuery.data?.callerRole ?? null;
+
+  useEffect(() => {
+    const game = gameQuery.data?.game;
+    if (!game) {
+      postedInvitationGameId.current = null;
+      return;
+    }
+    if (game.status === "pending" && callerRole === "challenger") {
+      postedInvitationGameId.current = game.id;
+      return;
+    }
+    if (
+      isFocused
+      && game.status === "active"
+      && callerRole === "player_x"
+      && postedInvitationGameId.current === game.id
+    ) {
+      postedInvitationGameId.current = null;
+      const gameHref = `/game/${match.conversationId}` as Href;
+      router.push(gameHref);
+    }
+  }, [callerRole, gameQuery.data?.game, isFocused, match.conversationId]);
+
+  let invitationAction: SystemMessageAction | undefined;
+  if (pendingGame?.invitationMessageId && pendingGame.invited === null) {
+    let label = "YOUR DUO'S INVITATION";
+    if (callerRole === "challenger") label = "INVITATION POSTED";
+    if (callerRole === "eligible") {
+      label = "JOIN GAME";
+      if (gameActions.accept.isPending) label = "JOINING...";
+    }
+    let invitationError: string | null = null;
+    if (gameActions.accept.error) invitationError = getGameErrorMessage(gameActions.accept.error);
+    invitationAction = {
+      messageId: pendingGame.invitationMessageId,
+      label,
+      disabled: callerRole !== "eligible" || gameActions.accept.isPending,
+      busy: gameActions.accept.isPending,
+      error: invitationError,
+    };
+    if (callerRole === "eligible") {
+      invitationAction.onPress = () => {
+        gameActions.accept.reset();
+        gameActions.accept.mutate(
+          { gameId: pendingGame.id, expectedStateVersion: pendingGame.stateVersion },
+          {
+            onSuccess: () => {
+              const gameHref = `/game/${match.conversationId}` as Href;
+              router.push(gameHref);
+            },
+          },
+        );
+      };
+    }
+  }
 
   if (!user?.id || !currentParticipant) return <Redirect href="/(app)/duo-chats" />;
   if (messagesQuery.isPending) return <LoadingView label="Loading conversationâ€¦" />;
@@ -134,6 +209,7 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
               }
             }}
             onRetry={retry}
+            systemMessageAction={invitationAction}
           />
         </View>
         <MessageComposer onSend={(body) => send(body, currentParticipant)} />

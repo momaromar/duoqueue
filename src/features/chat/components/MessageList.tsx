@@ -2,7 +2,10 @@ import { useEffect, useRef } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { MessageBubble } from "@/src/features/chat/components/MessageBubble";
-import { SystemMessage } from "@/src/features/chat/components/SystemMessage";
+import {
+  SystemMessage,
+  type SystemMessageAction,
+} from "@/src/features/chat/components/SystemMessage";
 import type { ChatMessage } from "@/src/features/chat/types";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
@@ -13,9 +16,18 @@ type MessageListProps = {
   isLoadingOlder: boolean;
   onLoadOlder: () => void;
   onRetry: (messageId: string) => void;
+  systemMessageAction?: SystemMessageAction;
 };
 
-export function MessageList({ messages, currentUserId, hasOlder, isLoadingOlder, onLoadOlder, onRetry }: MessageListProps) {
+export function MessageList({
+  messages,
+  currentUserId,
+  hasOlder,
+  isLoadingOlder,
+  onLoadOlder,
+  onRetry,
+  systemMessageAction,
+}: MessageListProps) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const previousLatestId = useRef<string | null>(null);
   const shouldScrollToEnd = useRef(false);
@@ -52,7 +64,11 @@ export function MessageList({ messages, currentUserId, hasOlder, isLoadingOlder,
       data={messages}
       keyExtractor={(message) => message.id}
       renderItem={({ item }) => {
-        if (item.kind === "system") return <SystemMessage message={item} />;
+        if (item.kind === "system") {
+          let action: SystemMessageAction | undefined;
+          if (systemMessageAction?.messageId === item.id) action = systemMessageAction;
+          return <SystemMessage message={item} action={action} />;
+        }
         return <MessageBubble message={item} currentUserId={currentUserId} onRetry={onRetry} />;
       }}
       ListHeaderComponent={listHeader}

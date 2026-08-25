@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react-native";
 
 import { GameBoard } from "@/src/features/games/tic-tac-toe/components/GameBoard";
 import { GameStatusPanel } from "@/src/features/games/tic-tac-toe/components/GameStatusPanel";
+import { SystemMessage } from "@/src/features/chat/components/SystemMessage";
 import { createFixtureState } from "@/src/features/games/tic-tac-toe/fixtures";
 import { getGameErrorMessage } from "@/src/features/games/tic-tac-toe/gameService";
 import { conversationGameSchema, type ConversationGame } from "@/src/features/games/tic-tac-toe/schemas";
@@ -41,6 +42,16 @@ describe("authoritative invitation responses", () => {
     expect(() => conversationGameSchema.parse({ game: responseFor("pending_challenger").game, callerRole: null })).toThrow();
   });
 
+  it("accepts an open pending invitation with an eligible opposite-duo caller", () => {
+    const fixture = createFixtureState("pending_challenger", conversationId, "classic", participants);
+    if (!fixture.snapshot) throw new Error("Expected a pending game.");
+    const openGame = { ...fixture.snapshot, invited: null };
+    const parsed = conversationGameSchema.parse({ game: openGame, callerRole: "eligible" });
+    expect(parsed.game?.invited).toBeNull();
+    expect(parsed.callerRole).toBe("eligible");
+    expect(parsed.game?.invitationMessageId).toBe(fixture.snapshot.invitationMessageId);
+  });
+
   it("replaces the user-and-conversation-scoped query cache", () => {
     const queryClient = new QueryClient();
     const response = responseFor("pending_challenger");
@@ -60,6 +71,7 @@ describe("authoritative invitation responses", () => {
     expect(getGameErrorMessage(new Error("function public.submit_game_move does not exist"))).toContain("Milestone 3");
     expect(getGameErrorMessage(new Error("function public.resign_game does not exist"))).toContain("Milestone 4");
     expect(getGameErrorMessage(new Error("GAME_REMATCH_NOT_ALLOWED"))).toContain("not eligible");
+    expect(getGameErrorMessage(new Error("GAME_OPEN_INVITATION_SAME_DUO"))).toContain("other duo");
   });
 });
 
@@ -88,6 +100,52 @@ describe("authoritative invitation controls", () => {
     expect(accept).toHaveBeenCalledTimes(1);
     expect(decline).toHaveBeenCalledTimes(1);
     expect(view.queryByLabelText("CANCEL INVITE")).toBeNull();
+  });
+
+  it("shows join without decline to an eligible open-invitation viewer", async () => {
+    const state = responseFor("pending_challenger");
+    const openGame = { ...state.game!, invited: null };
+    const join = jest.fn();
+    const view = await render(
+      <GameStatusPanel
+        snapshot={openGame}
+        viewerUserId={participants[2].userId}
+        callerRole="eligible"
+        localHotSeat={false}
+        onAccept={join}
+      />,
+    );
+    await fireEvent.press(view.getByLabelText("JOIN GAME"));
+    expect(join).toHaveBeenCalledTimes(1);
+    expect(view.queryByLabelText("DECLINE")).toBeNull();
+    expect(view.getByText(/open Classic 3/)).toBeTruthy();
+  });
+
+  it("renders actionable and disabled invitation message cards accessibly", async () => {
+    const message = {
+      id: "30000000-0000-4000-8000-000000000099",
+      kind: "system" as const,
+      body: "Avery posted an open Tic-Tac-Toe challenge.",
+      createdAt: "2026-08-25T12:00:00.000Z",
+    };
+    const join = jest.fn();
+    const joinView = await render(
+      <SystemMessage
+        message={message}
+        action={{ messageId: message.id, label: "JOIN GAME", disabled: false, onPress: join }}
+      />,
+    );
+    await fireEvent.press(joinView.getByLabelText("JOIN GAME"));
+    expect(join).toHaveBeenCalledTimes(1);
+    await cleanup();
+
+    const disabledView = await render(
+      <SystemMessage
+        message={message}
+        action={{ messageId: message.id, label: "YOUR DUO'S INVITATION", disabled: true }}
+      />,
+    );
+    expect(disabledView.getByLabelText("YOUR DUO'S INVITATION").props.accessibilityState.disabled).toBe(true);
   });
 
   it("leaves spectator invitations actionless and accepted boards read-only", async () => {

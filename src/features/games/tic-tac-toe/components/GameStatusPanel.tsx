@@ -52,7 +52,11 @@ export function getGameStatusCopy(
   if (snapshot.status === "pending") {
     title = "Invitation pending";
     if (snapshot.previousGameId) title = "Rematch requested";
-    detail = `${snapshot.challenger.displayName} challenged ${snapshot.invited.displayName} to ${preset.label}.`;
+    if (snapshot.invited) {
+      detail = `${snapshot.challenger.displayName} challenged ${snapshot.invited.displayName} to ${preset.label}.`;
+    } else {
+      detail = `${snapshot.challenger.displayName} posted an open ${preset.label} challenge for the other duo.`;
+    }
   }
   if (snapshot.status === "active") {
     title = `${nextPlayer?.mark ?? "X"}'s turn`;
@@ -73,7 +77,7 @@ export function getGameStatusCopy(
   }
   if (snapshot.status === "declined") {
     title = "Invitation declined";
-    detail = `${snapshot.invited.displayName} declined the local invitation.`;
+    detail = `${snapshot.invited?.displayName ?? "The invited player"} declined the invitation.`;
   }
   if (snapshot.status === "cancelled") {
     title = "Invitation cancelled";
@@ -101,13 +105,21 @@ export function GameStatusPanel({
   focusRef,
 }: GameStatusPanelProps) {
   const copy = getGameStatusCopy(snapshot, viewerUserId, localHotSeat, callerRole);
+  let acceptLabel = "ACCEPT INVITE";
+  if (callerRole === "eligible") acceptLabel = "JOIN GAME";
   return (
     <View style={styles.panel} accessibilityLiveRegion="polite">
       <Text ref={focusRef} accessible accessibilityRole="header" style={styles.title}>{copy.title}</Text>
       <Text style={styles.detail}>{copy.detail}</Text>
       <Text style={styles.role}>VIEWER ROLE: {copy.role.replace("_", " ").toUpperCase()}</Text>
       <View style={styles.actions}>
-        {onAccept && <ActionButton label="ACCEPT INVITE" disabled={actionsDisabled} onPress={onAccept} />}
+        {onAccept && (
+          <ActionButton
+            label={acceptLabel}
+            disabled={actionsDisabled}
+            onPress={onAccept}
+          />
+        )}
         {onDecline && <ActionButton label="DECLINE" danger disabled={actionsDisabled} onPress={onDecline} />}
         {onCancel && <ActionButton label="CANCEL INVITE" danger disabled={actionsDisabled} onPress={onCancel} />}
         {onResign && <ActionButton label="RESIGN GAME" danger disabled={actionsDisabled} onPress={onResign} />}

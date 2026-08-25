@@ -133,7 +133,6 @@ export function useConversationGameRealtime(
 
 type CreateInvitationVariables = {
   presetKey: GamePresetKey;
-  invitedUserId: string;
 };
 
 type TransitionVariables = {
@@ -155,11 +154,10 @@ export function useGameInvitationActions(
   };
 
   const create = useMutation({
-    mutationFn: ({ presetKey, invitedUserId }: CreateInvitationVariables) => createGameInvitation(
+    mutationFn: ({ presetKey }: CreateInvitationVariables) => createGameInvitation(
       conversationId!,
       Crypto.randomUUID(),
       presetKey,
-      invitedUserId,
     ),
     onSuccess,
     onError,

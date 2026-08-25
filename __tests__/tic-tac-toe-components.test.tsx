@@ -22,17 +22,13 @@ afterEach(async () => {
 });
 
 describe("Tic-Tac-Toe setup", () => {
-  it("offers every fixed preset and conversation opponent", async () => {
+  it("offers every fixed preset without choosing an opponent", async () => {
     const selectPreset = jest.fn();
-    const selectOpponent = jest.fn();
     const createInvitation = jest.fn();
     const view = await render(
       <GameSetupPanel
         selectedPreset="classic"
-        selectedOpponentId={participants[2].userId}
-        opponents={participants.slice(1)}
         onSelectPreset={selectPreset}
-        onSelectOpponent={selectOpponent}
         onCreateInvitation={createInvitation}
       />,
     );
@@ -42,10 +38,9 @@ describe("Tic-Tac-Toe setup", () => {
     expect(view.getByLabelText("Extended 7 × 7")).toBeTruthy();
     expect(view.getByLabelText("Large 10 × 10")).toBeTruthy();
     await fireEvent.press(view.getByLabelText("Large 10 × 10"));
-    await fireEvent.press(view.getByLabelText("Devon, Pixel Pair"));
-    await fireEvent.press(view.getByLabelText("Send game invitation"));
+    expect(view.queryByText("OPPONENT")).toBeNull();
+    await fireEvent.press(view.getByLabelText("Post open game invitation"));
     expect(selectPreset).toHaveBeenCalledWith("large");
-    expect(selectOpponent).toHaveBeenCalledWith(participants[3].userId);
     expect(createInvitation).toHaveBeenCalledTimes(1);
   });
 });

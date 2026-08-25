@@ -302,7 +302,7 @@ export type Database = {
           win_length: number;
           status: "pending" | "active" | "won" | "draw" | "resigned" | "declined" | "cancelled" | "closed";
           challenger_user_id: string;
-          invited_user_id: string;
+          invited_user_id: string | null;
           next_turn_user_id: string | null;
           winner_user_id: string | null;
           state_version: number;
@@ -323,7 +323,7 @@ export type Database = {
           win_length: number;
           status?: "pending" | "active" | "won" | "draw" | "resigned" | "declined" | "cancelled" | "closed";
           challenger_user_id: string;
-          invited_user_id: string;
+          invited_user_id?: string | null;
           next_turn_user_id?: string | null;
           winner_user_id?: string | null;
           state_version?: number;
@@ -698,7 +698,6 @@ export type Database = {
           conversation_id: string;
           client_game_id: string;
           preset_key: "classic" | "quick" | "extended" | "large";
-          invited_user_id: string;
         };
         Returns: Json;
       };

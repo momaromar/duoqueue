@@ -9,7 +9,7 @@ export type GameStatus =
   | "cancelled"
   | "closed";
 export type GameMark = "X" | "O";
-export type GameCallerRole = "challenger" | "invited" | "player_x" | "player_o" | "spectator";
+export type GameCallerRole = "challenger" | "eligible" | "invited" | "player_x" | "player_o" | "spectator";
 
 export type GamePreset = {
   key: GamePresetKey;
@@ -49,7 +49,8 @@ export type GameSnapshot = {
   status: GameStatus;
   stateVersion: number;
   challenger: GameParticipant;
-  invited: GameParticipant;
+  invited: GameParticipant | null;
+  invitationMessageId: string | null;
   players: GamePlayer[];
   moves: GameMove[];
   nextTurnUserId: string | null;

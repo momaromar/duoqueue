@@ -72,7 +72,7 @@ export function createLocalInvitation(
   conversationId: string,
   presetKey: GamePresetKey,
   challenger: GameParticipant,
-  invited: GameParticipant,
+  invited: GameParticipant | null,
   previousGameId: string | null = null,
 ): GameSnapshot {
   let gameId = fixtureUuid(900);
@@ -85,6 +85,7 @@ export function createLocalInvitation(
     stateVersion: 0,
     challenger,
     invited,
+    invitationMessageId: fixtureUuid(700),
     players: [],
     moves: [],
     nextTurnUserId: null,
@@ -99,9 +100,11 @@ export function createLocalInvitation(
 export function acceptLocalInvitation(
   snapshot: GameSnapshot,
   xParticipant: GameParticipant = snapshot.challenger,
-  oParticipant: GameParticipant = snapshot.invited,
+  oParticipant?: GameParticipant,
 ): GameSnapshot {
-  const players = [gamePlayer(xParticipant, "X"), gamePlayer(oParticipant, "O")];
+  const resolvedOpponent = oParticipant ?? snapshot.invited;
+  if (!resolvedOpponent) throw new Error("An open local invitation must be claimed before acceptance.");
+  const players = [gamePlayer(xParticipant, "X"), gamePlayer(resolvedOpponent, "O")];
   return {
     ...snapshot,
     status: "active",
@@ -158,7 +161,7 @@ export function getCallerRole(snapshot: GameSnapshot, userId: string): GameCalle
   if (player?.mark === "X") return "player_x";
   if (player?.mark === "O") return "player_o";
   if (snapshot.challenger.userId === userId) return "challenger";
-  if (snapshot.invited.userId === userId) return "invited";
+  if (snapshot.invited?.userId === userId) return "invited";
   return "spectator";
 }
 

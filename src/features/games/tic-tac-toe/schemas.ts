@@ -14,6 +14,7 @@ export const gameStatusSchema = z.enum([
 export const gameMarkSchema = z.enum(["X", "O"]);
 export const gameCallerRoleSchema = z.enum([
   "challenger",
+  "eligible",
   "invited",
   "player_x",
   "player_o",
@@ -55,7 +56,8 @@ export const gameSnapshotSchema = z.object({
   status: gameStatusSchema,
   stateVersion: z.number().int().nonnegative(),
   challenger: gameParticipantSchema,
-  invited: gameParticipantSchema,
+  invited: gameParticipantSchema.nullable(),
+  invitationMessageId: z.string().uuid().nullable().default(null),
   players: z.array(gamePlayerSchema).max(2),
   moves: z.array(gameMoveSchema),
   nextTurnUserId: z.string().uuid().nullable(),

@@ -2,15 +2,12 @@ import type { Ref } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { GAME_PRESETS, GAME_PRESET_KEYS } from "@/src/features/games/tic-tac-toe/presets";
-import type { GameParticipant, GamePresetKey } from "@/src/features/games/tic-tac-toe/types";
+import type { GamePresetKey } from "@/src/features/games/tic-tac-toe/types";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 
 type GameSetupPanelProps = {
   selectedPreset: GamePresetKey;
-  selectedOpponentId: string;
-  opponents: GameParticipant[];
   onSelectPreset: (preset: GamePresetKey) => void;
-  onSelectOpponent: (userId: string) => void;
   onCreateInvitation: () => void;
   isCreating?: boolean;
   actionsDisabled?: boolean;
@@ -19,21 +16,20 @@ type GameSetupPanelProps = {
 
 export function GameSetupPanel({
   selectedPreset,
-  selectedOpponentId,
-  opponents,
   onSelectPreset,
-  onSelectOpponent,
   onCreateInvitation,
   isCreating = false,
   actionsDisabled = false,
   focusRef,
 }: GameSetupPanelProps) {
-  let submitLabel = "SEND INVITATION";
-  if (isCreating) submitLabel = "SENDING…";
+  let submitLabel = "POST OPEN INVITATION";
+  if (isCreating) submitLabel = "POSTING...";
   return (
     <View style={styles.panel}>
       <Text ref={focusRef} accessible accessibilityRole="header" style={styles.title}>Start a game</Text>
-      <Text style={styles.description}>Choose a fixed preset and one of the other conversation members.</Text>
+      <Text style={styles.description}>
+        Choose a preset and post an open challenge. Either member of the other duo can join first.
+      </Text>
       <Text style={styles.label}>PRESET</Text>
       <View style={styles.choiceGrid} accessibilityRole="radiogroup">
         {GAME_PRESET_KEYS.map((key) => {
@@ -52,28 +48,9 @@ export function GameSetupPanel({
           );
         })}
       </View>
-      <Text style={styles.label}>OPPONENT</Text>
-      <View style={styles.choiceGrid} accessibilityRole="radiogroup">
-        {opponents.map((participant) => {
-          const selected = selectedOpponentId === participant.userId;
-          return (
-            <Pressable
-              key={participant.userId}
-              accessibilityRole="radio"
-              accessibilityLabel={`${participant.displayName}, ${participant.duoName}`}
-              accessibilityState={{ checked: selected }}
-              onPress={() => onSelectOpponent(participant.userId)}
-              style={({ pressed }) => [styles.choice, selected && styles.selected, pressed && styles.pressed]}
-            >
-              <Text style={[styles.choiceText, selected && styles.selectedText]}>{participant.displayName}</Text>
-              <Text style={styles.choiceDetail}>{participant.duoName}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Send game invitation"
+        accessibilityLabel="Post open game invitation"
         accessibilityState={{ disabled: isCreating || actionsDisabled }}
         disabled={isCreating || actionsDisabled}
         onPress={onCreateInvitation}
@@ -111,7 +88,6 @@ const styles = StyleSheet.create({
   selected: { borderColor: lobbyColors.cyan, backgroundColor: "#10304A" },
   choiceText: { color: lobbyColors.muted, fontSize: 11, fontWeight: "800" },
   selectedText: { color: lobbyColors.cyan },
-  choiceDetail: { color: lobbyColors.muted, fontSize: 9, marginTop: 2 },
   primary: {
     minHeight: 52,
     alignItems: "center",

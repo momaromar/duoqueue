@@ -44,13 +44,11 @@ export async function createGameInvitation(
   conversationId: string,
   gameId: string,
   presetKey: GamePresetKey,
-  invitedUserId: string,
 ) {
   const { data, error } = await requireSupabase().rpc("create_game_invitation", {
     conversation_id: conversationId,
     client_game_id: gameId,
     preset_key: presetKey,
-    invited_user_id: invitedUserId,
   });
   if (error) throw error;
   return parseGame(data);
@@ -201,6 +199,12 @@ export function getGameErrorMessage(error: unknown) {
   if (/GAME_NOT_AUTHORIZED|permission denied|not an active conversation member/i.test(raw)) {
     return "You are not allowed to perform that game action.";
   }
+  if (/GAME_OPEN_INVITATION_SAME_DUO/i.test(raw)) {
+    return "Only a member of the other duo can join this invitation.";
+  }
+  if (/GAME_OPEN_INVITATION_CANNOT_DECLINE/i.test(raw)) {
+    return "Open invitations are ignored rather than declined.";
+  }
   if (/GAME_NOT_YOUR_TURN/i.test(raw)) {
     return "It is not your turn. The latest board has been loaded.";
   }
@@ -230,6 +234,9 @@ export function getGameErrorMessage(error: unknown) {
   }
   if (/resign_game.*does not exist|create_game_rematch.*does not exist|could not find.*(resign_game|create_game_rematch)/i.test(raw)) {
     return "Game lifecycle actions are not configured yet. Apply the Milestone 4 migration, then refresh.";
+  }
+  if (/create_game_invitation.*invited_user_id|could not find.*create_game_invitation.*preset_key/i.test(raw)) {
+    return "Open game invitations are not configured yet. Apply the Milestone 6 migration, then refresh.";
   }
   if (/function .* does not exist|schema cache|game_sessions.*does not exist/i.test(raw)) {
     return "Tic-Tac-Toe invitations are not configured yet. Apply the Milestone 2 Supabase migration, then retry.";
