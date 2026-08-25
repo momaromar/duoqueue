@@ -5,6 +5,13 @@ import type { GamePresetKey } from "@/src/features/games/tic-tac-toe/types";
 
 let gameChannelSequence = 0;
 
+export type GameRealtimeConnectionStatus =
+  | "connecting"
+  | "subscribed"
+  | "disconnected"
+  | "timed_out"
+  | "channel_error";
+
 function requireSupabase() {
   if (!supabase) {
     throw new Error(`Missing Supabase configuration: ${missingPublicEnv.join(", ")}`);
@@ -14,6 +21,15 @@ function requireSupabase() {
 
 function parseGame(data: unknown) {
   return conversationGameSchema.parse(data);
+}
+
+function getRawGameError(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+  return String(error ?? "");
 }
 
 export async function getConversationGame(conversationId: string) {
@@ -110,9 +126,27 @@ export function subscribeToConversationGame(
   conversationId: string,
   gameId: string | undefined,
   onChange: () => void,
+  onStatus?: (status: GameRealtimeConnectionStatus) => void,
 ) {
   const client = requireSupabase();
   gameChannelSequence += 1;
+  let disposed = false;
+  let expectedChannels = 1;
+  if (gameId) expectedChannels = 2;
+  const subscribedChannels = new Set<string>();
+  const handleStatus = (channelName: string, status: string) => {
+    if (disposed) return;
+    if (status === "SUBSCRIBED") {
+      subscribedChannels.add(channelName);
+      if (subscribedChannels.size === expectedChannels) onStatus?.("subscribed");
+      return;
+    }
+    subscribedChannels.delete(channelName);
+    if (status === "TIMED_OUT") onStatus?.("timed_out");
+    else if (status === "CHANNEL_ERROR") onStatus?.("channel_error");
+    else if (status === "CLOSED") onStatus?.("disconnected");
+  };
+  onStatus?.("connecting");
   const sessionChannel = client
     .channel(`conversation-game:${conversationId}:${gameChannelSequence}`)
     .on(
@@ -125,7 +159,7 @@ export function subscribeToConversationGame(
       },
       onChange,
     )
-    .subscribe();
+    .subscribe((status) => handleStatus("session", status));
 
   const channels = [sessionChannel];
   if (gameId) {
@@ -141,18 +175,23 @@ export function subscribeToConversationGame(
         },
         onChange,
       )
-      .subscribe();
+      .subscribe((status) => handleStatus("moves", status));
     channels.push(movesChannel);
   }
 
   return () => {
+    disposed = true;
     channels.forEach((channel) => { void client.removeChannel(channel); });
   };
 }
 
+export function isGameConversationUnavailableError(error: unknown) {
+  const raw = getRawGameError(error);
+  return /GAME_NOT_AUTHORIZED.*(conversation|active)|conversation.*(closed|unavailable)|This conversation is closed/i.test(raw);
+}
+
 export function getGameErrorMessage(error: unknown) {
-  let raw = String(error ?? "");
-  if (error instanceof Error) raw = error.message;
+  const raw = getRawGameError(error);
   if (/GAME_VERSION_CONFLICT/i.test(raw)) {
     return "The game changed on another device. The latest state has been loaded.";
   }

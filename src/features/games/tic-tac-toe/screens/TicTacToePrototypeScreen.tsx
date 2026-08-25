@@ -1,16 +1,21 @@
 import { useIsFocused } from "@react-navigation/native";
 import { Redirect, router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { LoadingView } from "@/src/components/common/LoadingView";
 import { useAuth } from "@/src/features/auth/AuthContext";
 import { useChatParticipants } from "@/src/features/chat/useChatParticipants";
+import { focusGameElement } from "@/src/features/games/tic-tac-toe/accessibility";
 import { GameBoard } from "@/src/features/games/tic-tac-toe/components/GameBoard";
+import { GameConnectionNotice } from "@/src/features/games/tic-tac-toe/components/GameConnectionNotice";
 import { GameResignationConfirmation } from "@/src/features/games/tic-tac-toe/components/GameResignationConfirmation";
 import { GameSetupPanel } from "@/src/features/games/tic-tac-toe/components/GameSetupPanel";
 import { GameStatusPanel, getGameStatusCopy } from "@/src/features/games/tic-tac-toe/components/GameStatusPanel";
-import { getGameErrorMessage } from "@/src/features/games/tic-tac-toe/gameService";
+import {
+  getGameErrorMessage,
+  isGameConversationUnavailableError,
+} from "@/src/features/games/tic-tac-toe/gameService";
 import type { GameParticipant, GamePresetKey } from "@/src/features/games/tic-tac-toe/types";
 import {
   useConversationGame,
@@ -37,27 +42,40 @@ export function TicTacToeScreen() {
   );
 }
 
-function GameRouteGate({ profile, matchmaking, routeConversationId }: MatchmakingGateData & { routeConversationId?: string }) {
+function GameRouteGate({
+  profile,
+  matchmaking,
+  refetchMatchmaking,
+  routeConversationId,
+}: MatchmakingGateData & { routeConversationId?: string }) {
   const { user } = useAuth();
   const match = matchmaking.match;
   if (!match || matchmaking.status !== "matched") return <Redirect href="/(app)/duo-chats" />;
   if (!routeConversationId || routeConversationId !== match.conversationId) {
     return <Redirect href="/(app)/duo-chats" />;
   }
-  return <AuthoritativeGame profile={profile} match={match} currentUserId={user?.id} />;
+  return (
+    <AuthoritativeGame
+      profile={profile}
+      match={match}
+      currentUserId={user?.id}
+      refetchMatchmaking={refetchMatchmaking}
+    />
+  );
 }
 
 type AuthoritativeGameProps = {
   profile: MatchmakingGateData["profile"];
   match: NonNullable<MatchmakingGateData["matchmaking"]["match"]>;
   currentUserId?: string;
+  refetchMatchmaking: MatchmakingGateData["refetchMatchmaking"];
 };
 
 export function shouldShowGameSetup(gameId: string | null, dismissedGameId: string | null) {
   return !gameId || gameId === dismissedGameId;
 }
 
-function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameProps) {
+function AuthoritativeGame({ profile, match, currentUserId, refetchMatchmaking }: AuthoritativeGameProps) {
   const isFocused = useIsFocused();
   const { participants: chatParticipants, currentParticipant } = useChatParticipants(currentUserId, profile, match);
   const participants: GameParticipant[] = useMemo(
@@ -69,11 +87,16 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   const [dismissedGameId, setDismissedGameId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingResignation, setConfirmingResignation] = useState(false);
+  const [focusRequest, setFocusRequest] = useState<"status" | "setup" | null>(null);
+  const focusBaseline = useRef("none");
+  const statusFocusRef = useRef<Text>(null);
+  const setupFocusRef = useRef<Text>(null);
+  const errorFocusRef = useRef<View>(null);
   const gameQuery = useConversationGame(currentUserId, match.conversationId);
   const actions = useGameInvitationActions(currentUserId, match.conversationId);
   const lifecycle = useGameLifecycleActions(currentUserId, match.conversationId);
   const move = useSubmitGameMove(currentUserId, match.conversationId);
-  useConversationGameRealtime(
+  const realtime = useConversationGameRealtime(
     currentUserId,
     match.conversationId,
     gameQuery.data?.game?.id,
@@ -88,41 +111,18 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   const gameState = gameQuery.data;
   const snapshot = gameState?.game ?? null;
   const callerRole = gameState?.callerRole ?? null;
+  let snapshotKey = "none";
+  if (snapshot) snapshotKey = `${snapshot.id}:${snapshot.status}:${snapshot.stateVersion}`;
+  const showSetup = shouldShowGameSetup(snapshot?.id ?? null, dismissedGameId);
   const actionPending = actions.create.isPending
     || actions.accept.isPending
     || actions.decline.isPending
     || actions.cancel.isPending
     || lifecycle.resign.isPending
     || lifecycle.rematch.isPending
-    || move.isPending;
-
-  useEffect(() => {
-    if (!snapshot || !callerRole) return;
-    const copy = getGameStatusCopy(snapshot, currentUserId ?? "", false, callerRole);
-    AccessibilityInfo.announceForAccessibility(`${copy.title}. ${copy.detail}`);
-  }, [callerRole, currentUserId, snapshot]);
-
-  useEffect(() => {
-    setConfirmingResignation(false);
-    if (snapshot?.status === "pending" || snapshot?.status === "active") {
-      setDismissedGameId(null);
-    }
-  }, [snapshot?.id, snapshot?.status]);
-
-  if (!currentUserId || !currentParticipant || participants.length !== 4) {
-    return <Redirect href="/(app)/duo-chats" />;
-  }
-  if (gameQuery.isPending) return <LoadingView label="Loading Tic-Tac-Toe…" />;
-
-  const opponents = participants.filter((participant) => participant.userId !== currentUserId);
-  const showSetup = shouldShowGameSetup(snapshot?.id ?? null, dismissedGameId);
-
-  const runAction = (action: () => void) => {
-    setActionError(null);
-    action();
-  };
-  let transition: { gameId: string; expectedStateVersion: number } | null = null;
-  if (snapshot) transition = { gameId: snapshot.id, expectedStateVersion: snapshot.stateVersion };
+    || move.isPending
+    || realtime.isRecovering
+    || gameQuery.isFetching;
 
   const mutationError = actions.create.error
     ?? actions.accept.error
@@ -134,6 +134,62 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   let visibleError = actionError;
   if (!visibleError && mutationError) visibleError = getGameErrorMessage(mutationError);
   if (!visibleError && gameQuery.error) visibleError = getGameErrorMessage(gameQuery.error);
+
+  const gameAnnouncement = useMemo(() => {
+    if (!snapshot || !callerRole) return null;
+    const copy = getGameStatusCopy(snapshot, currentUserId ?? "", false, callerRole);
+    return `${copy.title}. ${copy.detail}`;
+  }, [callerRole, currentUserId, snapshot]);
+
+  useEffect(() => {
+    if (gameAnnouncement) AccessibilityInfo.announceForAccessibility(gameAnnouncement);
+  }, [gameAnnouncement]);
+
+  useEffect(() => {
+    setConfirmingResignation(false);
+    if (snapshot?.status === "pending" || snapshot?.status === "active") {
+      setDismissedGameId(null);
+    }
+  }, [snapshot?.id, snapshot?.status]);
+
+  useEffect(() => {
+    if (!gameQuery.error || !isGameConversationUnavailableError(gameQuery.error)) return;
+    void refetchMatchmaking().finally(() => router.replace("/(app)/duo-chats"));
+  }, [gameQuery.error, refetchMatchmaking]);
+
+  useEffect(() => {
+    if (!focusRequest) return;
+    let target: Text | null = null;
+    if (visibleError) {
+      const timer = setTimeout(() => focusGameElement(errorFocusRef.current), 0);
+      setFocusRequest(null);
+      return () => clearTimeout(timer);
+    }
+    if (focusRequest === "setup" && showSetup) target = setupFocusRef.current;
+    if (focusRequest === "status" && snapshotKey !== focusBaseline.current && !actionPending) {
+      target = statusFocusRef.current;
+    }
+    if (!target) return;
+    const timer = setTimeout(() => focusGameElement(target), 0);
+    setFocusRequest(null);
+    return () => clearTimeout(timer);
+  }, [actionPending, focusRequest, showSetup, snapshotKey, visibleError]);
+
+  if (!currentUserId || !currentParticipant || participants.length !== 4) {
+    return <Redirect href="/(app)/duo-chats" />;
+  }
+  if (gameQuery.isPending) return <LoadingView label="Loading Tic-Tac-Toe…" />;
+
+  const opponents = participants.filter((participant) => participant.userId !== currentUserId);
+
+  const runAction = (action: () => void) => {
+    setActionError(null);
+    focusBaseline.current = snapshotKey;
+    setFocusRequest("status");
+    action();
+  };
+  let transition: { gameId: string; expectedStateVersion: number } | null = null;
+  if (snapshot) transition = { gameId: snapshot.id, expectedStateVersion: snapshot.stateVersion };
 
   let acceptAction: (() => void) | undefined;
   let declineAction: (() => void) | undefined;
@@ -147,7 +203,10 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   }
   let returnToSetupAction: (() => void) | undefined;
   if (snapshot && snapshot.status !== "pending" && snapshot.status !== "active") {
-    returnToSetupAction = () => setDismissedGameId(snapshot.id);
+    returnToSetupAction = () => {
+      setFocusRequest("setup");
+      setDismissedGameId(snapshot.id);
+    };
   }
   const currentPlayer = snapshot?.players.find((player) => player.userId === currentUserId);
   const opponentPlayer = snapshot?.players.find((player) => player.userId !== currentUserId);
@@ -169,10 +228,12 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
     snapshot?.status === "active"
     && currentPlayer
     && snapshot.nextTurnUserId === currentUserId
-    && !move.isPending
+    && !actionPending
   ) {
     playMove = (row, column) => {
       setActionError(null);
+      focusBaseline.current = snapshotKey;
+      setFocusRequest("status");
       move.reset();
       move.submit(snapshot.id, snapshot.stateVersion, row, column, currentPlayer.mark);
     };
@@ -195,17 +256,27 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
         </View>
       </View>
 
+      <GameConnectionNotice
+        status={realtime.connectionStatus}
+        isRecovering={realtime.isRecovering}
+        onReconnect={realtime.reconnectAndRefresh}
+      />
+
       {showSetup && (
         <GameSetupPanel
+          focusRef={setupFocusRef}
           selectedPreset={selectedPreset}
           selectedOpponentId={selectedOpponentId}
           opponents={opponents}
           onSelectPreset={setSelectedPreset}
           onSelectOpponent={setSelectedOpponentId}
           isCreating={actions.create.isPending}
+          actionsDisabled={actionPending}
           onCreateInvitation={() => {
             if (!selectedOpponentId) {
               setActionError("Choose another conversation member first.");
+              focusBaseline.current = snapshotKey;
+              setFocusRequest("status");
               return;
             }
             runAction(() => actions.create.mutate({ presetKey: selectedPreset, invitedUserId: selectedOpponentId }));
@@ -216,6 +287,7 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
       {!showSetup && snapshot && callerRole && (
         <>
           <GameStatusPanel
+            focusRef={statusFocusRef}
             snapshot={snapshot}
             viewerUserId={currentUserId}
             callerRole={callerRole}
@@ -231,7 +303,7 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
           {confirmingResignation && transition && opponentPlayer && (
             <GameResignationConfirmation
               opponentName={opponentPlayer.displayName}
-              disabled={lifecycle.resign.isPending}
+              disabled={actionPending}
               onConfirm={() => runAction(() => lifecycle.resign.mutate(transition))}
               onCancel={() => setConfirmingResignation(false)}
             />
@@ -254,6 +326,7 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
         <View style={styles.errorPanel} accessibilityLiveRegion="polite">
           <Text style={styles.error}>{visibleError}</Text>
           <Pressable
+            ref={errorFocusRef}
             accessibilityRole="button"
             accessibilityLabel="Refresh game state"
             onPress={() => {
@@ -266,7 +339,11 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
               lifecycle.rematch.reset();
               move.reset();
               setConfirmingResignation(false);
-              void gameQuery.refetch();
+              setFocusRequest(null);
+              void gameQuery.refetch().then(() => {
+                if (showSetup) focusGameElement(setupFocusRef.current);
+                else focusGameElement(statusFocusRef.current);
+              });
             }}
             style={({ pressed }) => [styles.retry, pressed && styles.pressed]}
           >

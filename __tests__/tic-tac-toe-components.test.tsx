@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render } from "@testing-library/react-native";
 
 import { GameBoard } from "@/src/features/games/tic-tac-toe/components/GameBoard";
+import { GameConnectionNotice } from "@/src/features/games/tic-tac-toe/components/GameConnectionNotice";
 import { GameResignationConfirmation } from "@/src/features/games/tic-tac-toe/components/GameResignationConfirmation";
 import { GameSetupPanel } from "@/src/features/games/tic-tac-toe/components/GameSetupPanel";
 import { GameStatusPanel } from "@/src/features/games/tic-tac-toe/components/GameStatusPanel";
@@ -110,7 +111,7 @@ describe("Tic-Tac-Toe game states", () => {
     );
     const cells = view.getAllByRole("button");
     expect(cells).toHaveLength(9);
-    const emptyCell = view.getByLabelText("Row 1, column 2, empty");
+    const emptyCell = view.getByLabelText(/^Row 1, column 2, empty,/);
     expect(emptyCell.props.accessibilityState.disabled).toBe(true);
     await fireEvent.press(emptyCell);
     expect(onMove).not.toHaveBeenCalled();
@@ -128,7 +129,7 @@ describe("Tic-Tac-Toe game states", () => {
       />,
     );
     expect(view.getByText("PENDING")).toBeTruthy();
-    expect(view.getByLabelText("Row 2, column 2, occupied by O")).toBeTruthy();
+    expect(view.getByLabelText(/^Row 2, column 2, occupied by O,/)).toBeTruthy();
   });
 
   it("requires explicit confirmation before resignation", async () => {
@@ -165,5 +166,25 @@ describe("Tic-Tac-Toe game states", () => {
       <GameBoard snapshot={fixture.snapshot} viewerUserId={fixture.viewerUserId} />,
     );
     expect(boardView.getAllByRole("button").every((cell) => cell.props.accessibilityState.disabled)).toBe(true);
+  });
+
+  it("keeps live-update failures recoverable without hiding the board state", async () => {
+    const reconnect = jest.fn();
+    const view = await render(
+      <GameConnectionNotice status="channel_error" isRecovering={false} onReconnect={reconnect} />,
+    );
+    expect(view.getByText("Live updates interrupted")).toBeTruthy();
+    await fireEvent.press(view.getByLabelText("Reconnect and refresh game"));
+    expect(reconnect).toHaveBeenCalledTimes(1);
+  });
+
+  it("describes availability and overlapping indicators without relying on color", async () => {
+    const fixture = createFixtureState("won", conversationId, "classic", participants);
+    if (!fixture.snapshot) throw new Error("Expected a winning fixture.");
+    const view = await render(
+      <GameBoard snapshot={fixture.snapshot} viewerUserId={fixture.viewerUserId} />,
+    );
+    expect(view.getByLabelText(/last move, winning cell/)).toBeTruthy();
+    expect(view.getByText("LAST · WIN")).toBeTruthy();
   });
 });

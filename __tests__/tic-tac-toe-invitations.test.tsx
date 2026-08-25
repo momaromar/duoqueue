@@ -110,7 +110,7 @@ describe("authoritative invitation controls", () => {
     const activeView = await render(
       <GameBoard snapshot={accepted.game!} viewerUserId={userId} onMove={onMove} />,
     );
-    const emptyCell = activeView.getByLabelText("Row 1, column 2, empty");
+    const emptyCell = activeView.getByLabelText(/^Row 1, column 2, empty,/);
     expect(emptyCell.props.accessibilityState.disabled).toBe(false);
     await fireEvent.press(emptyCell);
     expect(onMove).toHaveBeenCalledWith(0, 1);
@@ -132,7 +132,7 @@ describe("authoritative invitation controls", () => {
     const fixture = createFixtureState("won", conversationId, "classic", participants);
     if (!fixture.snapshot) throw new Error("Expected a winning game.");
     const view = await render(<GameBoard snapshot={fixture.snapshot} viewerUserId={userId} />);
-    expect(view.getAllByText("WIN")).toHaveLength(3);
+    expect(view.getAllByLabelText(/winning cell/)).toHaveLength(3);
     expect(view.getAllByRole("button").every((cell) => cell.props.accessibilityState.disabled)).toBe(true);
   });
 

@@ -54,6 +54,36 @@ describe("Tic-Tac-Toe presets and coordinates", () => {
   });
 });
 
+describe("large-board geometry", () => {
+  it("fits the whole logical board and clamps translation at each scale", () => {
+    expect(getBoardMinimumScale(280, 560)).toBe(0.5);
+    expect(getBoardMinimumScale(600, 560)).toBe(1);
+    expect(clampBoardTranslation(500, 1, 560, 280)).toBe(140);
+    expect(clampBoardTranslation(-500, 1, 560, 280)).toBe(-140);
+    expect(clampBoardTranslation(40, 0.5, 560, 280)).toBe(0);
+  });
+
+  it("resolves cells only inside the transformed board", () => {
+    const transform = { scale: 0.5, translateX: 0, translateY: 0 };
+    expect(resolveBoardCell(14, 14, transform, 280, 560, 56, 10)).toEqual({ row: 0, column: 0 });
+    expect(resolveBoardCell(279, 279, transform, 280, 560, 56, 10)).toEqual({ row: 9, column: 9 });
+    expect(resolveBoardCell(-1, 50, transform, 280, 560, 56, 10)).toBeNull();
+  });
+
+  it("centers the latest move while keeping the board within bounds", () => {
+    expect(getCenteredCellTransform(0, 0, 0.5, 280, 560, 56)).toEqual({
+      scale: 1,
+      translateX: 140,
+      translateY: 140,
+    });
+    expect(getCenteredCellTransform(9, 9, 0.5, 280, 560, 56)).toEqual({
+      scale: 1,
+      translateX: -140,
+      translateY: -140,
+    });
+  });
+});
+
 describe("Tic-Tac-Toe winning lines", () => {
   const cases: { name: string; cells: [number, number][]; last: [number, number] }[] = [
     { name: "horizontal edge", cells: [[0, 0], [0, 1], [0, 2]], last: [0, 2] },
@@ -125,3 +155,9 @@ describe("Tic-Tac-Toe board reconstruction", () => {
     expect(reconstructBoard(presetKey, []).board).toEqual(createEmptyBoard(presetKey));
   });
 });
+import {
+  clampBoardTranslation,
+  getBoardMinimumScale,
+  getCenteredCellTransform,
+  resolveBoardCell,
+} from "@/src/features/games/tic-tac-toe/boardGeometry";

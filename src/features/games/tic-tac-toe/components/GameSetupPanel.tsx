@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { GAME_PRESETS, GAME_PRESET_KEYS } from "@/src/features/games/tic-tac-toe/presets";
@@ -12,6 +13,8 @@ type GameSetupPanelProps = {
   onSelectOpponent: (userId: string) => void;
   onCreateInvitation: () => void;
   isCreating?: boolean;
+  actionsDisabled?: boolean;
+  focusRef?: Ref<Text>;
 };
 
 export function GameSetupPanel({
@@ -22,12 +25,14 @@ export function GameSetupPanel({
   onSelectOpponent,
   onCreateInvitation,
   isCreating = false,
+  actionsDisabled = false,
+  focusRef,
 }: GameSetupPanelProps) {
   let submitLabel = "SEND INVITATION";
   if (isCreating) submitLabel = "SENDING…";
   return (
     <View style={styles.panel}>
-      <Text accessibilityRole="header" style={styles.title}>Start a game</Text>
+      <Text ref={focusRef} accessible accessibilityRole="header" style={styles.title}>Start a game</Text>
       <Text style={styles.description}>Choose a fixed preset and one of the other conversation members.</Text>
       <Text style={styles.label}>PRESET</Text>
       <View style={styles.choiceGrid} accessibilityRole="radiogroup">
@@ -69,10 +74,10 @@ export function GameSetupPanel({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Send game invitation"
-        accessibilityState={{ disabled: isCreating }}
-        disabled={isCreating}
+        accessibilityState={{ disabled: isCreating || actionsDisabled }}
+        disabled={isCreating || actionsDisabled}
         onPress={onCreateInvitation}
-        style={({ pressed }) => [styles.primary, isCreating && styles.disabled, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.primary, (isCreating || actionsDisabled) && styles.disabled, pressed && styles.pressed]}
       >
         <Text style={styles.primaryText}>{submitLabel}</Text>
       </Pressable>

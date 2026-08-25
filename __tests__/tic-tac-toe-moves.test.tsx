@@ -7,7 +7,11 @@ import { createFixtureState } from "@/src/features/games/tic-tac-toe/fixtures";
 import * as gameService from "@/src/features/games/tic-tac-toe/gameService";
 import type { ConversationGame } from "@/src/features/games/tic-tac-toe/schemas";
 import type { GameParticipant } from "@/src/features/games/tic-tac-toe/types";
-import { useSubmitGameMove } from "@/src/features/games/tic-tac-toe/useConversationGame";
+import {
+  useConversationGame,
+  useConversationGameRealtime,
+  useSubmitGameMove,
+} from "@/src/features/games/tic-tac-toe/useConversationGame";
 
 jest.mock("expo-haptics", () => ({
   ImpactFeedbackStyle: { Light: "light" },
@@ -77,6 +81,77 @@ describe("authoritative move mutation", () => {
     await waitFor(() => expect(hook.result.current.isError).toBe(true));
     expect(hook.result.current.optimisticMove).toBeNull();
     expect(Haptics.impactAsync).not.toHaveBeenCalled();
+    await hook.unmount();
+    queryClient.clear();
+  });
+});
+
+describe("game Realtime recovery", () => {
+  it("reports channel health, coalesces event bursts, and reconnects with cleanup", async () => {
+    const response = activeResponse();
+    const unsubscribe = jest.fn();
+    const statusListeners: ((status: gameService.GameRealtimeConnectionStatus) => void)[] = [];
+    const changeListeners: (() => void)[] = [];
+    jest.spyOn(gameService, "getConversationGame").mockResolvedValue(response);
+    jest.spyOn(gameService, "subscribeToConversationGame").mockImplementation(
+      (_conversationId, _gameId, onChange, onStatus) => {
+        changeListeners.push(onChange);
+        if (onStatus) statusListeners.push(onStatus);
+        return unsubscribe;
+      },
+    );
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: Infinity }, mutations: { gcTime: Infinity } },
+    });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const hook = await renderHook(() => {
+      const game = useConversationGame(userId, conversationId);
+      const realtime = useConversationGameRealtime(userId, conversationId, game.data?.game?.id);
+      return { game, realtime };
+    }, { wrapper });
+
+    await waitFor(() => expect(hook.result.current.game.isSuccess).toBe(true));
+    const initialRequests = jest.mocked(gameService.getConversationGame).mock.calls.length;
+    await act(() => statusListeners[statusListeners.length - 1]?.("subscribed"));
+    await waitFor(() => expect(jest.mocked(gameService.getConversationGame).mock.calls.length).toBeGreaterThan(initialRequests));
+    await act(() => {
+      const listener = changeListeners[changeListeners.length - 1];
+      listener?.();
+      listener?.();
+      listener?.();
+    });
+    const requestsBeforeBurst = jest.mocked(gameService.getConversationGame).mock.calls.length;
+    await waitFor(
+      () => expect(jest.mocked(gameService.getConversationGame)).toHaveBeenCalledTimes(requestsBeforeBurst + 1),
+      { timeout: 1000 },
+    );
+
+    await act(() => statusListeners[statusListeners.length - 1]?.("channel_error"));
+    expect(hook.result.current.realtime.connectionStatus).toBe("channel_error");
+    await act(() => hook.result.current.realtime.reconnectAndRefresh());
+    await waitFor(() => expect(jest.mocked(gameService.subscribeToConversationGame).mock.calls.length).toBeGreaterThan(1));
+    expect(unsubscribe).toHaveBeenCalled();
+    await hook.unmount();
+    queryClient.clear();
+  });
+
+  it("turns synchronous subscription failures into recoverable channel state", async () => {
+    jest.spyOn(gameService, "subscribeToConversationGame").mockImplementation(() => {
+      throw new Error("cannot add postgres_changes callbacks");
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+    });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const hook = await renderHook(
+      () => useConversationGameRealtime(userId, conversationId, undefined),
+      { wrapper },
+    );
+    await waitFor(() => expect(hook.result.current.connectionStatus).toBe("channel_error"));
     await hook.unmount();
     queryClient.clear();
   });

@@ -1,3 +1,4 @@
+import type { Ref } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { getCallerRole } from "@/src/features/games/tic-tac-toe/fixtures";
@@ -17,6 +18,7 @@ type GameStatusPanelProps = {
   onResign?: () => void;
   onRematch?: () => void;
   onReturnToSetup?: () => void;
+  focusRef?: Ref<Text>;
 };
 
 function ActionButton({ label, danger, disabled, onPress }: { label: string; danger?: boolean; disabled?: boolean; onPress: () => void }) {
@@ -96,11 +98,12 @@ export function GameStatusPanel({
   onResign,
   onRematch,
   onReturnToSetup,
+  focusRef,
 }: GameStatusPanelProps) {
   const copy = getGameStatusCopy(snapshot, viewerUserId, localHotSeat, callerRole);
   return (
     <View style={styles.panel} accessibilityLiveRegion="polite">
-      <Text accessibilityRole="header" style={styles.title}>{copy.title}</Text>
+      <Text ref={focusRef} accessible accessibilityRole="header" style={styles.title}>{copy.title}</Text>
       <Text style={styles.detail}>{copy.detail}</Text>
       <Text style={styles.role}>VIEWER ROLE: {copy.role.replace("_", " ").toUpperCase()}</Text>
       <View style={styles.actions}>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View, type DimensionValue, type LayoutChangeEvent } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View, type DimensionValue, type LayoutChangeEvent } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   ReduceMotion,
@@ -10,6 +10,12 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import {
+  clampBoardTranslation,
+  getBoardMinimumScale,
+  getCenteredCellTransform,
+  resolveBoardCell,
+} from "@/src/features/games/tic-tac-toe/boardGeometry";
 import { getGamePreset } from "@/src/features/games/tic-tac-toe/presets";
 import { cellToIndex, reconstructBoard } from "@/src/features/games/tic-tac-toe/rules";
 import type { GameMark, GameMove, GameSnapshot } from "@/src/features/games/tic-tac-toe/types";
@@ -53,7 +59,17 @@ function GameCell({
 }: CellProps) {
   let occupancy = "empty";
   if (mark) occupancy = `occupied by ${mark}`;
-  const label = `Row ${row + 1}, column ${column + 1}, ${occupancy}`;
+  const stateLabels = [occupancy];
+  if (disabled) stateLabels.push("unavailable");
+  else stateLabels.push("available move");
+  if (isLast) stateLabels.push("last move");
+  if (isWinning) stateLabels.push("winning cell");
+  if (isOptimistic) stateLabels.push("pending confirmation");
+  const label = `Row ${row + 1}, column ${column + 1}, ${stateLabels.join(", ")}`;
+  const indicators: string[] = [];
+  if (isLast) indicators.push("LAST");
+  if (isWinning) indicators.push("WIN");
+  if (isOptimistic) indicators.push("PENDING");
   let innerAccessible: true | undefined;
   let innerRole: "button" | undefined;
   let innerLabel: string | undefined;
@@ -95,9 +111,7 @@ function GameCell({
       ]}
     >
       <Text style={[styles.mark, mark === "X" && styles.markX, mark === "O" && styles.markO]}>{mark}</Text>
-      {isLast && <Text style={styles.cellIndicator}>LAST</Text>}
-      {isWinning && <Text style={styles.cellIndicator}>WIN</Text>}
-      {isOptimistic && <Text style={styles.cellIndicator}>PENDING</Text>}
+      {indicators.length > 0 && <Text style={styles.cellIndicator}>{indicators.join(" · ")}</Text>}
     </View>
   );
   if (!usePressable) return content;
@@ -180,7 +194,8 @@ function InteractiveLargeBoard(props: GameBoardProps) {
   const { cells, preset, lastMove } = useBoardCells(props);
   const [viewportSize, setViewportSize] = useState(320);
   const boardPixels = preset.boardSize * LARGE_CELL_SIZE;
-  const minimumScale = Math.min(1, viewportSize / boardPixels);
+  const minimumScale = getBoardMinimumScale(viewportSize, boardPixels);
+  const webUsesPressableCells = Platform.OS === "web";
   const scale = useSharedValue(minimumScale);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
@@ -197,12 +212,6 @@ function InteractiveLargeBoard(props: GameBoardProps) {
     translateY.value = 0;
   }, [minimumScale, preset.key, scale, translateX, translateY]);
 
-  const clampTranslation = (value: number, currentScale: number) => {
-    "worklet";
-    const maximum = Math.max(0, (boardPixels * currentScale - viewportSize) / 2);
-    return Math.min(maximum, Math.max(-maximum, value));
-  };
-
   const pan = Gesture.Pan()
     .minDistance(8)
     .onBegin(() => {
@@ -210,8 +219,8 @@ function InteractiveLargeBoard(props: GameBoardProps) {
       startY.value = translateY.value;
     })
     .onUpdate((event) => {
-      translateX.value = clampTranslation(startX.value + event.translationX, scale.value);
-      translateY.value = clampTranslation(startY.value + event.translationY, scale.value);
+      translateX.value = clampBoardTranslation(startX.value + event.translationX, scale.value, boardPixels, viewportSize);
+      translateY.value = clampBoardTranslation(startY.value + event.translationY, scale.value, boardPixels, viewportSize);
     });
 
   const pinch = Gesture.Pinch()
@@ -221,18 +230,21 @@ function InteractiveLargeBoard(props: GameBoardProps) {
     .onUpdate((event) => {
       const nextScale = Math.min(MAX_SCALE, Math.max(minimumScale, startScale.value * event.scale));
       scale.value = nextScale;
-      translateX.value = clampTranslation(translateX.value, nextScale);
-      translateY.value = clampTranslation(translateY.value, nextScale);
+      translateX.value = clampBoardTranslation(translateX.value, nextScale, boardPixels, viewportSize);
+      translateY.value = clampBoardTranslation(translateY.value, nextScale, boardPixels, viewportSize);
     });
 
   const resolveCell = (x: number, y: number) => {
     "worklet";
-    const scaledBoard = boardPixels * scale.value;
-    const left = (viewportSize - scaledBoard) / 2 + translateX.value;
-    const top = (viewportSize - scaledBoard) / 2 + translateY.value;
-    const column = Math.floor((x - left) / (LARGE_CELL_SIZE * scale.value));
-    const row = Math.floor((y - top) / (LARGE_CELL_SIZE * scale.value));
-    return { row, column };
+    return resolveBoardCell(
+      x,
+      y,
+      { scale: scale.value, translateX: translateX.value, translateY: translateY.value },
+      viewportSize,
+      boardPixels,
+      LARGE_CELL_SIZE,
+      preset.boardSize,
+    );
   };
 
   const submitCell = (row: number, column: number) => {
@@ -242,15 +254,17 @@ function InteractiveLargeBoard(props: GameBoardProps) {
   };
 
   const tap = Gesture.Tap()
+    .enabled(!webUsesPressableCells)
     .maxDistance(8)
     .onBegin((event) => {
       const cell = resolveCell(event.x, event.y);
-      tapStartRow.value = cell.row;
-      tapStartColumn.value = cell.column;
+      tapStartRow.value = cell?.row ?? -1;
+      tapStartColumn.value = cell?.column ?? -1;
     })
     .onEnd((event, success) => {
       if (!success) return;
       const cell = resolveCell(event.x, event.y);
+      if (!cell) return;
       if (cell.row !== tapStartRow.value || cell.column !== tapStartColumn.value) return;
       runOnJS(submitCell)(cell.row, cell.column);
     });
@@ -280,14 +294,15 @@ function InteractiveLargeBoard(props: GameBoardProps) {
 
   const centerLastMove = () => {
     if (!lastMove) return;
-    const nextScale = Math.max(1, minimumScale);
-    const scaledBoard = boardPixels * nextScale;
-    const cellX = (lastMove.column + 0.5) * LARGE_CELL_SIZE * nextScale;
-    const cellY = (lastMove.row + 0.5) * LARGE_CELL_SIZE * nextScale;
-    const maximum = Math.max(0, (scaledBoard - viewportSize) / 2);
-    const nextX = Math.min(maximum, Math.max(-maximum, scaledBoard / 2 - cellX));
-    const nextY = Math.min(maximum, Math.max(-maximum, scaledBoard / 2 - cellY));
-    setTransform(nextScale, nextX, nextY);
+    const next = getCenteredCellTransform(
+      lastMove.row,
+      lastMove.column,
+      minimumScale,
+      viewportSize,
+      boardPixels,
+      LARGE_CELL_SIZE,
+    );
+    setTransform(next.scale, next.translateX, next.translateY);
   };
 
   const onLayout = (event: LayoutChangeEvent) => {
@@ -316,7 +331,7 @@ function InteractiveLargeBoard(props: GameBoardProps) {
                 key={cell.key}
                 size={LARGE_CELL_SIZE}
                 onPress={() => submitCell(cell.row, cell.column)}
-                usePressable={false}
+                usePressable={webUsesPressableCells}
               />
             ))}
           </Animated.View>

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 
 import { chatMessagesKey, chatSummaryKey } from "@/src/features/chat/useChat";
@@ -15,6 +15,7 @@ import {
   resignGame,
   submitGameMove,
   subscribeToConversationGame,
+  type GameRealtimeConnectionStatus,
 } from "@/src/features/games/tic-tac-toe/gameService";
 import type { ConversationGame } from "@/src/features/games/tic-tac-toe/schemas";
 import type { GameMark, GamePresetKey } from "@/src/features/games/tic-tac-toe/types";
@@ -64,6 +65,38 @@ export function useConversationGameRealtime(
 ) {
   const queryClient = useQueryClient();
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recoverySequence = useRef(0);
+  const mounted = useRef(true);
+  const [connectionStatus, setConnectionStatus] = useState<GameRealtimeConnectionStatus>("connecting");
+  const [isRecovering, setIsRecovering] = useState(false);
+  const [subscriptionGeneration, setSubscriptionGeneration] = useState(0);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+
+  const recoverAuthoritativeState = useCallback(async () => {
+    if (!userId || !conversationId) return;
+    recoverySequence.current += 1;
+    const sequence = recoverySequence.current;
+    setIsRecovering(true);
+    try {
+      await queryClient.refetchQueries({
+        queryKey: conversationGameKey(userId, conversationId),
+        exact: true,
+        type: "active",
+      });
+    } finally {
+      if (mounted.current && recoverySequence.current === sequence) setIsRecovering(false);
+    }
+  }, [conversationId, queryClient, userId]);
+
+  const reconnectAndRefresh = useCallback(() => {
+    setConnectionStatus("connecting");
+    setSubscriptionGeneration((current) => current + 1);
+    void recoverAuthoritativeState();
+  }, [recoverAuthoritativeState]);
 
   useEffect(() => {
     if (!enabled || !userId || !conversationId) return;
@@ -74,9 +107,18 @@ export function useConversationGameRealtime(
         void queryClient.invalidateQueries({ queryKey: conversationGameKey(userId, conversationId) });
       }, 40);
     };
-    const unsubscribe = subscribeToConversationGame(conversationId, gameId, refresh);
+    const handleStatus = (status: GameRealtimeConnectionStatus) => {
+      setConnectionStatus(status);
+      if (status === "subscribed") void recoverAuthoritativeState();
+    };
+    let unsubscribe: () => void = () => undefined;
+    try {
+      unsubscribe = subscribeToConversationGame(conversationId, gameId, refresh, handleStatus);
+    } catch {
+      setConnectionStatus("channel_error");
+    }
     const appStateSubscription = AppState.addEventListener("change", (state) => {
-      if (state === "active") refresh();
+      if (state === "active") void recoverAuthoritativeState();
     });
     return () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
@@ -84,7 +126,9 @@ export function useConversationGameRealtime(
       unsubscribe();
       appStateSubscription.remove();
     };
-  }, [conversationId, enabled, gameId, queryClient, userId]);
+  }, [conversationId, enabled, gameId, queryClient, recoverAuthoritativeState, subscriptionGeneration, userId]);
+
+  return { connectionStatus, isRecovering, reconnectAndRefresh };
 }
 
 type CreateInvitationVariables = {
