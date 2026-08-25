@@ -714,6 +714,16 @@ export type Database = {
         Args: { game_id: string; expected_state_version: number };
         Returns: Json;
       };
+      submit_game_move: {
+        Args: {
+          game_id: string;
+          client_move_id: string;
+          expected_state_version: number;
+          row_index: number;
+          column_index: number;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       duo_status: "forming" | "active";

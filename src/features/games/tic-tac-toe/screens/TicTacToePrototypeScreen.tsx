@@ -15,6 +15,7 @@ import {
   useConversationGame,
   useConversationGameRealtime,
   useGameInvitationActions,
+  useSubmitGameMove,
 } from "@/src/features/games/tic-tac-toe/useConversationGame";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
@@ -67,7 +68,13 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   const [actionError, setActionError] = useState<string | null>(null);
   const gameQuery = useConversationGame(currentUserId, match.conversationId);
   const actions = useGameInvitationActions(currentUserId, match.conversationId);
-  useConversationGameRealtime(currentUserId, match.conversationId, isFocused);
+  const move = useSubmitGameMove(currentUserId, match.conversationId);
+  useConversationGameRealtime(
+    currentUserId,
+    match.conversationId,
+    gameQuery.data?.game?.id,
+    isFocused,
+  );
 
   const refetchGame = gameQuery.refetch;
   useFocusEffect(useCallback(() => {
@@ -80,7 +87,8 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   const actionPending = actions.create.isPending
     || actions.accept.isPending
     || actions.decline.isPending
-    || actions.cancel.isPending;
+    || actions.cancel.isPending
+    || move.isPending;
 
   useEffect(() => {
     if (!snapshot || !callerRole) return;
@@ -112,7 +120,8 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   const mutationError = actions.create.error
     ?? actions.accept.error
     ?? actions.decline.error
-    ?? actions.cancel.error;
+    ?? actions.cancel.error
+    ?? move.error;
   let visibleError = actionError;
   if (!visibleError && mutationError) visibleError = getGameErrorMessage(mutationError);
   if (!visibleError && gameQuery.error) visibleError = getGameErrorMessage(gameQuery.error);
@@ -130,6 +139,20 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
   let returnToSetupAction: (() => void) | undefined;
   if (snapshot && snapshot.status !== "pending" && snapshot.status !== "active") {
     returnToSetupAction = () => setDismissedGameId(snapshot.id);
+  }
+  const currentPlayer = snapshot?.players.find((player) => player.userId === currentUserId);
+  let playMove: ((row: number, column: number) => void) | undefined;
+  if (
+    snapshot?.status === "active"
+    && currentPlayer
+    && snapshot.nextTurnUserId === currentUserId
+    && !move.isPending
+  ) {
+    playMove = (row, column) => {
+      setActionError(null);
+      move.reset();
+      move.submit(snapshot.id, snapshot.stateVersion, row, column, currentPlayer.mark);
+    };
   }
 
   return (
@@ -183,11 +206,13 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
           {snapshot.status === "pending" && callerRole === "spectator" && (
             <Notice text="You can watch this invitation, but only the invited player may respond." />
           )}
-          {snapshot.status === "active" && (
-            <>
-              <Notice text="Invitation accepted. The authoritative board is ready, but moves arrive in Milestone 3." />
-              <GameBoard snapshot={snapshot} viewerUserId={currentUserId} />
-            </>
+          {["active", "won", "draw"].includes(snapshot.status) && (
+            <GameBoard
+              snapshot={snapshot}
+              viewerUserId={currentUserId}
+              optimisticMove={move.optimisticMove}
+              onMove={playMove}
+            />
           )}
         </>
       )}
@@ -204,6 +229,7 @@ function AuthoritativeGame({ profile, match, currentUserId }: AuthoritativeGameP
               actions.accept.reset();
               actions.decline.reset();
               actions.cancel.reset();
+              move.reset();
               void gameQuery.refetch();
             }}
             style={({ pressed }) => [styles.retry, pressed && styles.pressed]}

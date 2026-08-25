@@ -54,6 +54,10 @@ describe("authoritative invitation responses", () => {
     expect(getGameErrorMessage(new Error("GAME_VERSION_CONFLICT current_version=2"))).toContain("latest state");
     expect(getGameErrorMessage(new Error("function public.get_conversation_game does not exist"))).toContain("migration");
     expect(getGameErrorMessage(new Error("column reference conversation_id is ambiguous"))).toContain("202608240002");
+    expect(getGameErrorMessage(new Error("GAME_NOT_YOUR_TURN"))).toContain("not your turn");
+    expect(getGameErrorMessage(new Error("GAME_CELL_OCCUPIED"))).toContain("already occupied");
+    expect(getGameErrorMessage(new Error("GAME_MOVE_OUT_OF_RANGE"))).toContain("outside");
+    expect(getGameErrorMessage(new Error("function public.submit_game_move does not exist"))).toContain("Milestone 3");
   });
 });
 
@@ -96,5 +100,37 @@ describe("authoritative invitation controls", () => {
     const boardView = await render(<GameBoard snapshot={accepted.game!} viewerUserId={userId} />);
     expect(boardView.getAllByRole("button")).toHaveLength(9);
     expect(boardView.getAllByRole("button").every((cell) => cell.props.accessibilityState.disabled)).toBe(true);
+  });
+
+  it("enables only an active player's empty cells and locks the board during an optimistic move", async () => {
+    const accepted = responseFor("active_player_turn");
+    const onMove = jest.fn();
+    const activeView = await render(
+      <GameBoard snapshot={accepted.game!} viewerUserId={userId} onMove={onMove} />,
+    );
+    const emptyCell = activeView.getByLabelText("Row 1, column 2, empty");
+    expect(emptyCell.props.accessibilityState.disabled).toBe(false);
+    await fireEvent.press(emptyCell);
+    expect(onMove).toHaveBeenCalledWith(0, 1);
+    await cleanup();
+
+    const pendingView = await render(
+      <GameBoard
+        snapshot={accepted.game!}
+        viewerUserId={userId}
+        optimisticMove={{ row: 0, column: 1, mark: "X" }}
+        onMove={onMove}
+      />,
+    );
+    expect(pendingView.getByText("PENDING")).toBeTruthy();
+    expect(pendingView.getAllByRole("button").every((cell) => cell.props.accessibilityState.disabled)).toBe(true);
+  });
+
+  it("renders persisted winning cells and a read-only completed board", async () => {
+    const fixture = createFixtureState("won", conversationId, "classic", participants);
+    if (!fixture.snapshot) throw new Error("Expected a winning game.");
+    const view = await render(<GameBoard snapshot={fixture.snapshot} viewerUserId={userId} />);
+    expect(view.getAllByText("WIN")).toHaveLength(3);
+    expect(view.getAllByRole("button").every((cell) => cell.props.accessibilityState.disabled)).toBe(true);
   });
 });
