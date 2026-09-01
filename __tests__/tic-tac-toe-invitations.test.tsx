@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render } from "@testing-library/react-native";
 import { GameBoard } from "@/src/features/games/tic-tac-toe/components/GameBoard";
 import { GameStatusPanel } from "@/src/features/games/tic-tac-toe/components/GameStatusPanel";
 import { SystemMessage } from "@/src/features/chat/components/SystemMessage";
+import { getGameChatActionPresentation } from "@/src/features/games/tic-tac-toe/chatInvitationAction";
 import { createFixtureState } from "@/src/features/games/tic-tac-toe/fixtures";
 import { getGameErrorMessage } from "@/src/features/games/tic-tac-toe/gameService";
 import { conversationGameSchema, type ConversationGame } from "@/src/features/games/tic-tac-toe/schemas";
@@ -76,6 +77,30 @@ describe("authoritative invitation responses", () => {
 });
 
 describe("authoritative invitation controls", () => {
+  it("turns the accepted invitation card into a spectator action only for unassigned viewers", () => {
+    const active = responseFor("active_player_turn").game;
+    if (!active) throw new Error("Expected an active game.");
+
+    expect(getGameChatActionPresentation(active, "spectator", false)).toEqual({
+      messageId: active.invitationMessageId,
+      kind: "spectate",
+      label: "SPECTATE",
+      disabled: false,
+    });
+    expect(getGameChatActionPresentation(active, "player_x", false)).toBeNull();
+    expect(getGameChatActionPresentation(active, "player_o", false)).toBeNull();
+  });
+
+  it.each(["won", "draw", "resigned", "cancelled", "declined", "closed"] as const)(
+    "keeps the invitation message non-actionable when the game is %s",
+    (status) => {
+      const active = responseFor("active_player_turn").game;
+      if (!active) throw new Error("Expected an active game.");
+      const terminal = { ...active, status };
+      expect(getGameChatActionPresentation(terminal, "spectator", false)).toBeNull();
+    },
+  );
+
   it("shows cancel only to the challenger", async () => {
     const state = responseFor("pending_challenger");
     const cancel = jest.fn();
@@ -137,6 +162,17 @@ describe("authoritative invitation controls", () => {
     );
     await fireEvent.press(joinView.getByLabelText("JOIN GAME"));
     expect(join).toHaveBeenCalledTimes(1);
+    await cleanup();
+
+    const spectate = jest.fn();
+    const spectateView = await render(
+      <SystemMessage
+        message={message}
+        action={{ messageId: message.id, label: "SPECTATE", disabled: false, onPress: spectate }}
+      />,
+    );
+    await fireEvent.press(spectateView.getByLabelText("SPECTATE"));
+    expect(spectate).toHaveBeenCalledTimes(1);
     await cleanup();
 
     const disabledView = await render(

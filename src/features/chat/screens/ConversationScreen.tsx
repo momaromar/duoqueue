@@ -17,6 +17,7 @@ import {
 } from "@/src/features/chat/useChat";
 import { useChatParticipants } from "@/src/features/chat/useChatParticipants";
 import { DuoStateErrorScreen } from "@/src/features/duos/screens/DuoStateErrorScreen";
+import { getGameChatActionPresentation } from "@/src/features/games/tic-tac-toe/chatInvitationAction";
 import { getGameErrorMessage } from "@/src/features/games/tic-tac-toe/gameService";
 import {
   useConversationGame,
@@ -103,8 +104,7 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
     markRead();
   }, [isFocused, latestIncomingMessage, markRead]);
 
-  let pendingGame = null;
-  if (gameQuery.data?.game?.status === "pending") pendingGame = gameQuery.data.game;
+  const currentGame = gameQuery.data?.game ?? null;
   const callerRole = gameQuery.data?.callerRole ?? null;
 
   useEffect(() => {
@@ -130,27 +130,28 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
   }, [callerRole, gameQuery.data?.game, isFocused, match.conversationId]);
 
   let invitationAction: SystemMessageAction | undefined;
-  if (pendingGame?.invitationMessageId && pendingGame.invited === null) {
-    let label = "YOUR DUO'S INVITATION";
-    if (callerRole === "challenger") label = "INVITATION POSTED";
-    if (callerRole === "eligible") {
-      label = "JOIN GAME";
-      if (gameActions.accept.isPending) label = "JOINING...";
-    }
+  const actionPresentation = getGameChatActionPresentation(
+    currentGame,
+    callerRole,
+    gameActions.accept.isPending,
+  );
+  if (actionPresentation) {
     let invitationError: string | null = null;
-    if (gameActions.accept.error) invitationError = getGameErrorMessage(gameActions.accept.error);
+    if (actionPresentation.kind === "join" && gameActions.accept.error) {
+      invitationError = getGameErrorMessage(gameActions.accept.error);
+    }
     invitationAction = {
-      messageId: pendingGame.invitationMessageId,
-      label,
-      disabled: callerRole !== "eligible" || gameActions.accept.isPending,
-      busy: gameActions.accept.isPending,
+      messageId: actionPresentation.messageId,
+      label: actionPresentation.label,
+      disabled: actionPresentation.disabled,
+      busy: actionPresentation.kind === "join" && gameActions.accept.isPending,
       error: invitationError,
     };
-    if (callerRole === "eligible") {
+    if (actionPresentation.kind === "join" && currentGame) {
       invitationAction.onPress = () => {
         gameActions.accept.reset();
         gameActions.accept.mutate(
-          { gameId: pendingGame.id, expectedStateVersion: pendingGame.stateVersion },
+          { gameId: currentGame.id, expectedStateVersion: currentGame.stateVersion },
           {
             onSuccess: () => {
               const gameHref = `/game/${match.conversationId}` as Href;
@@ -158,6 +159,12 @@ function AuthorizedConversation({ profile, match }: AuthorizedConversationProps)
             },
           },
         );
+      };
+    }
+    if (actionPresentation.kind === "spectate") {
+      invitationAction.onPress = () => {
+        const gameHref = `/game/${match.conversationId}` as Href;
+        router.push(gameHref);
       };
     }
   }
