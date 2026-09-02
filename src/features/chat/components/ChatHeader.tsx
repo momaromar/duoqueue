@@ -28,7 +28,7 @@ export function ChatHeader({ ownDuoName, opponentDuoName, onOpenSafety, onOpenGa
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`View ${opponentDuoName} profile`}
-        onPress={() => router.push("/matchmaking/matched-profile")}
+        onPress={() => router.push("/matchmaking/matched")}
         style={({ pressed }) => [styles.profile, pressed && styles.pressed]}
       >
         <Text style={styles.profileText}>PROFILE</Text>
