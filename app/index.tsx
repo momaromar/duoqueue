@@ -20,7 +20,6 @@ export default function Index() {
     | "/(app)"
     | "/duo-contributions"
     | "/duo-choice"
-    | "/duo-profile-preview"
     | "/update-password"
     | "/waiting-for-friend"
     | "/welcome" = "/welcome";
@@ -49,8 +48,7 @@ export default function Index() {
         return <DuoStateErrorScreen error={profileQuery.error} onRetry={profileQuery.refetch} />;
       }
       if (!profileQuery.data.currentMember.submittedAt) destination = "/duo-contributions";
-      if (profileQuery.data.currentMember.submittedAt) destination = "/duo-profile-preview";
-      if (profileQuery.data.duo.profileComplete) destination = "/(app)";
+      if (profileQuery.data.currentMember.submittedAt) destination = "/(app)";
     }
   }
 
