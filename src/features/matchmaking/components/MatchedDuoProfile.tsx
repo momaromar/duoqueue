@@ -32,6 +32,11 @@ function answerColors(colorKey: MemberColorKey) {
   return styles.memberBAnswer;
 }
 
+function contributorColor(colorKey: MemberColorKey) {
+  if (colorKey === "member_a") return styles.memberAContributor;
+  return styles.memberBContributor;
+}
+
 function MemberImage({ member }: { member: OpponentMember }) {
   if (!member.imageUrl) return null;
   return (
@@ -50,10 +55,13 @@ function MemberImage({ member }: { member: OpponentMember }) {
 function ProfileAnswer({ answer }: { answer: OpponentAnswer }) {
   return (
     <View style={[styles.answer, answerColors(answer.colorKey)]}>
-      <Text style={styles.promptNumber}>PROMPT {answer.sortOrder} OF 6</Text>
       <Text style={styles.question}>{answer.promptText}</Text>
-      <Text style={styles.response}>{answer.responseText}</Text>
-      <Text style={styles.contributor}>Answered by {answer.displayName} · {answer.colorKey}</Text>
+      <Text style={styles.response}>
+        {answer.responseText}
+        <Text style={[styles.inlineContributor, contributorColor(answer.colorKey)]}>
+          {" — "}{answer.displayName}
+        </Text>
+      </Text>
     </View>
   );
 }
@@ -91,12 +99,13 @@ const styles = StyleSheet.create({
   memberABorder: { borderColor: lobbyColors.memberA },
   memberBBorder: { borderColor: lobbyColors.memberB },
   imageContributor: { color: lobbyColors.text, fontSize: 13, fontWeight: "800", textAlign: "center" },
-  answers: { gap: 12 },
-  answer: { gap: 7, borderWidth: 1, borderRadius: 12, padding: 14 },
+  answers: { gap: 8 },
+  answer: { gap: 5, borderWidth: 1, borderRadius: 12, padding: 11 },
   memberAAnswer: { borderColor: lobbyColors.memberA, backgroundColor: "#0A2034" },
   memberBAnswer: { borderColor: lobbyColors.memberB, backgroundColor: "#2A1815" },
-  promptNumber: { color: lobbyColors.muted, fontSize: 11, fontWeight: "900", letterSpacing: 1.4 },
-  question: { color: lobbyColors.text, fontWeight: "800", lineHeight: 20 },
-  response: { color: lobbyColors.text, lineHeight: 21 },
-  contributor: { color: lobbyColors.muted, fontSize: 12 },
+  question: { color: lobbyColors.text, fontWeight: "800", lineHeight: 19 },
+  response: { color: lobbyColors.text, lineHeight: 20 },
+  inlineContributor: { fontWeight: "800" },
+  memberAContributor: { color: lobbyColors.memberA },
+  memberBContributor: { color: lobbyColors.memberB },
 });

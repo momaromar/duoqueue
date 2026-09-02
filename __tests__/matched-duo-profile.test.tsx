@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 
 import { LobbyHeader } from "@/src/features/main-menu/components/LobbyHeader";
+import { lobbyColors } from "@/src/features/main-menu/lobbyTheme";
 import {
   MatchedDuoProfile,
   orderOpponentAnswers,
@@ -70,17 +72,23 @@ describe("matched Duo Profile", () => {
     expect(view.getByText("Late-night food and arcade regulars.")).toBeTruthy();
     expect(view.getByLabelText("Avery's Duo Profile image")).toBeTruthy();
     expect(view.getByLabelText("Blair's Duo Profile image")).toBeTruthy();
-    const promptLabels = view.getAllByText(/PROMPT/).map((node) => node.props.children.join(""));
-    expect(promptLabels).toEqual([
-      "PROMPT 1 OF 6",
-      "PROMPT 2 OF 6",
-      "PROMPT 3 OF 6",
-      "PROMPT 4 OF 6",
-      "PROMPT 5 OF 6",
-      "PROMPT 6 OF 6",
+    const questions = view.getAllByText(/^Question/).map((node) => node.props.children);
+    expect(questions).toEqual([
+      "Question 1",
+      "Question 2",
+      "Question 3",
+      "Question 4",
+      "Question 5",
+      "Question 6",
     ]);
-    expect(view.getAllByText("Answered by Avery · member_a")).toHaveLength(3);
-    expect(view.getAllByText("Answered by Blair · member_b")).toHaveLength(3);
+    expect(view.queryAllByText(/PROMPT \d OF 6/)).toHaveLength(0);
+    expect(view.queryAllByText(/Answered by|member_a|member_b/)).toHaveLength(0);
+    const memberASignatures = view.getAllByText(" — Avery");
+    const memberBSignatures = view.getAllByText(" — Blair");
+    expect(memberASignatures).toHaveLength(3);
+    expect(memberBSignatures).toHaveLength(3);
+    expect(StyleSheet.flatten(memberASignatures[0].props.style).color).toBe(lobbyColors.memberA);
+    expect(StyleSheet.flatten(memberBSignatures[0].props.style).color).toBe(lobbyColors.memberB);
   });
 
   it("shows one image without a placeholder and omits the image section when both are absent", async () => {
