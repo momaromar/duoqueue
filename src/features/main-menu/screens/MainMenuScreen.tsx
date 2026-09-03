@@ -1,4 +1,4 @@
-import { Redirect, router, useFocusEffect, type Href } from "expo-router";
+import { Redirect, router, useFocusEffect } from "expo-router";
 import { useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -11,6 +11,7 @@ import {
   useCurrentDuoState,
 } from "@/src/features/duos/useCurrentDuoState";
 import { DuoMemberReadiness } from "@/src/features/main-menu/components/DuoMemberReadiness";
+import { LobbyDuoControls } from "@/src/features/main-menu/components/LobbyDuoControls";
 import { LobbyButton } from "@/src/features/main-menu/components/LobbyButton";
 import { LobbyScreen } from "@/src/features/main-menu/components/LobbyScreen";
 import { getQueuePresentation } from "@/src/features/main-menu/lobbyReadiness";
@@ -109,20 +110,13 @@ export function MainMenuScreen() {
         />
       </View>
 
-      <View style={styles.menu} accessibilityLabel="Lobby menu">
-        <LobbyButton
-          label="DUO"
-          detail="MANAGE YOUR DUO"
-          onPress={() => router.push("/duo" as Href)}
-        />
-        <LobbyButton
-          label="DUO CHATS"
-          detail="CONVERSATIONS"
-          onPress={() => router.push("/(app)/duo-chats")}
-        />
-      </View>
-
       <DuoMemberReadiness members={profile.members} />
+
+      <LobbyDuoControls
+        duo={duo}
+        userId={user?.id}
+        onOpenPreferences={() => router.push("/duo")}
+      />
     </LobbyScreen>
   );
 }
@@ -138,5 +132,4 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   queueArea: { alignItems: "center", gap: 12, paddingVertical: 4 },
-  menu: { flexDirection: "row", gap: 10 },
 });

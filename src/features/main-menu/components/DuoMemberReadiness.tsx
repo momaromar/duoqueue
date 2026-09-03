@@ -54,7 +54,7 @@ export function DuoMemberReadiness({ members }: DuoMemberReadinessProps) {
                 accessible={false}
                 color={iconColor}
                 name="person-circle"
-                size={76}
+                size={56}
                 testID={`readiness-icon-${member.colorKey}`}
               />
             </View>
@@ -84,12 +84,12 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   iconShell: {
-    width: 82,
-    height: 82,
+    width: 62,
+    height: 62,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 41,
-    shadowRadius: 12,
+    borderRadius: 31,
+    shadowRadius: 9,
     shadowOffset: { width: 0, height: 0 },
   },
   status: {

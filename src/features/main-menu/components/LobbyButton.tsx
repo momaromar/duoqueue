@@ -6,6 +6,7 @@ import {
   View,
   type PressableProps,
   type StyleProp,
+  type TextStyle,
   type ViewStyle,
 } from "react-native";
 
@@ -16,6 +17,7 @@ type LobbyButtonProps = Omit<PressableProps, "children" | "style"> & {
   detail?: string;
   variant?: "queue" | "menu";
   style?: StyleProp<ViewStyle>;
+  labelStyle?: StyleProp<TextStyle>;
 };
 
 export function LobbyButton({
@@ -24,6 +26,7 @@ export function LobbyButton({
   variant = "menu",
   disabled,
   style,
+  labelStyle,
   onFocus,
   onBlur,
   ...props
@@ -59,7 +62,7 @@ export function LobbyButton({
       ]}
     >
       <View style={styles.textGroup}>
-        <Text style={[styles.label, isQueue && styles.queueLabel]}>{label}</Text>
+        <Text style={[styles.label, isQueue && styles.queueLabel, labelStyle]}>{label}</Text>
         {detail && <Text style={[styles.detail, isQueue && styles.queueDetail]}>{detail}</Text>}
       </View>
     </Pressable>
